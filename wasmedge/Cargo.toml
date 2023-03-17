@@ -1,0 +1,9 @@
+[package]
+name = "wasmedge"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.69"
+wasmedge-sdk = {git = "https://github.com/WasmEdge/WasmEdge", tag = "0.12.0-alpha.2"}
+wasmedge-sys = {git = "https://github.com/WasmEdge/WasmEdge", tag = "0.12.0-alpha.2"}
