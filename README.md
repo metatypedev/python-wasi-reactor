@@ -31,11 +31,11 @@ improving the runtime.
 
 [Wasmedge-bindgen](https://github.com/second-state/wasmedge-bindgen) has been
 chosen over [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen) because of
-its focus on Rust as a host/guest.
+its focus on the Rust/WASM ecosystem and the support of the CNCF.
 [wit-bindgen](https://github.com/bytecodealliance/wit-bindgen) may also be
 interesting to consider in the future.
 
-### Deno
+### Deno host
 
 [Deno](https://github.com/denoland/deno_std/blob/main/wasi/snapshot_preview1.ts)
 does not yet provide a full implentation of WASI, yet the building blocks are
@@ -46,7 +46,7 @@ enough to run some workloads.
 deno run -A --unstable deno/main.ts
 ```
 
-### WasmEdge
+### WasmEdge host
 
 [WasmEdge](https://github.com/WasmEdge/WasmEdge) has a custom implementation of
 socket WASI API, which is not yet compatible with the project. The example will
@@ -60,6 +60,8 @@ cargo run -p wasmedge
 ```
 
 ## Development
+
+Install [Whiz](https://github.com/zifeo/whiz) or manually run.
 
 ```bash
 ./install.sh

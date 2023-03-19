@@ -1,0 +1,9 @@
+reactor:
+  watch: "src/**/*"
+  command: "./build.sh"
+
+deno:
+  watch: "deno/**/*.ts"
+  command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/main.ts"
+  depends_on:
+    - reactor

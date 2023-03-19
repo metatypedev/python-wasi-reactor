@@ -4,30 +4,29 @@
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+
 use wasmedge_bindgen_macro::wasmedge_bindgen;
+mod memory;
+
+use memory::host_result;
+
+pub mod host {
+    #[link(wasm_import_module = "host")]
+    extern "C" {
+        pub fn callback(id: i32, value: i32) -> ();
+    }
+}
 
 #[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    println!("testt");
-    Ok((a + b).to_string())
+fn reverse(str: String) -> PyResult<String> {
+    println!("reverse: {}", str);
+    Ok(str.chars().rev().collect::<String>())
 }
 
 #[pymodule]
-fn string_sum(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+fn reactor(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(reverse, m)?)?;
     Ok(())
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn allocate(size: i32) -> *const u8 {
-    let buffer = Vec::with_capacity(size as usize);
-    let buffer = std::mem::ManuallyDrop::new(buffer);
-    buffer.as_ptr() as *const u8
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn deallocate(pointer: *mut u8, size: i32) {
-    drop(Vec::from_raw_parts(pointer, size as usize, size as usize));
 }
 
 #[wasmedge_bindgen]
@@ -58,16 +57,36 @@ pub fn unregister(name: String) -> Result<String, String> {
 }
 
 #[wasmedge_bindgen]
-pub fn apply(name: String, json: String) -> Result<String, String> {
-    Python::with_gil(|py| {
-        let module = py.import("plugin")?;
-        let args = serde_json::from_str::<serde_json::Value>(&json).unwrap();
-        let native = pythonize::pythonize(py, &args)?;
-        let ret = module.getattr("fs")?.get_item(name)?.call1((native,))?;
-        let res: serde_json::Value = pythonize::depythonize(ret)?;
-        Ok::<String, PyErr>(res.to_string())
-    })
-    .map_err(|e| e.to_string())
+pub fn apply(id: i32, name: String, args: String) -> u8 {
+    let run = serde_json::from_str::<serde_json::Value>(&args)
+        .map_err(|e| e.to_string())
+        .and_then(|pyargs| {
+            Python::with_gil(|py| {
+                let module = py.import("plugin")?;
+                let native = pythonize::pythonize(py, &pyargs)?;
+                let pyret = module.getattr("fs")?.get_item(name)?.call1((native,))?;
+                let json: serde_json::Value = pythonize::depythonize(pyret)?;
+                Ok::<serde_json::Value, PyErr>(json)
+            })
+            .map_err(|e| e.to_string())
+        })
+        .and_then(|pyret| Ok(pyret.to_string()));
+    match run {
+        Ok(res) => {
+            let ptr = host_result(true, res);
+            unsafe {
+                host::callback(id, ptr);
+            };
+            0
+        }
+        Err(e) => {
+            let ptr = host_result(false, e);
+            unsafe {
+                host::callback(id, ptr);
+            };
+            1
+        }
+    }
 }
 
 #[no_mangle]
@@ -75,7 +94,7 @@ pub extern "C" fn init() {
     std::env::set_var("PYTHONPATH", "/app");
     std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
 
-    pyo3::append_to_inittab!(string_sum);
+    pyo3::append_to_inittab!(reactor);
     pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {
