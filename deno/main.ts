@@ -5,15 +5,9 @@ const binary = await Deno.readFile("./build/python-wasi-reactor.wasm");
 const module = await WebAssembly.compile(binary);
 
 const context = new Context({
-  env: {
-    //PYTHONPATH: "/app",
-    //PYTHONDONTWRITEBYTECODE: "1",
-  },
+  env: {},
   args: [],
-  preopens: {
-    //"/app": "./python",
-    //"/usr/local/lib": "./vendor/libpython/usr/local/lib",
-  },
+  preopens: {},
 });
 
 const instance = new WebAssembly.Instance(module, {

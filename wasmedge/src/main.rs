@@ -12,26 +12,18 @@ pub fn sock_accept(
     _caller: Caller,
     _args: Vec<WasmValue>,
 ) -> Result<Vec<WasmValue>, HostFuncError> {
-    println!("Hello, world!");
-
     Ok(vec![])
 }
 
 fn main() -> Result<()> {
-    // https://github.com/second-state/wasmedge-rustsdk-examples
-
     let mut config = Config::create()?;
     config.wasi(true);
 
     let mut store = Store::create()?;
     let mut vm = Vm::create(Some(config), Some(&mut store))?;
-    vm.register_wasm_from_file("extern", "./target/wasm32-wasi/release/wrapper.wasm")?;
+    vm.register_wasm_from_file("extern", "./build/python-wasi-reactor.wasm")?;
 
-    let mut wasi_import = WasiModule::create(
-        None,
-        Some(vec!["PYTHONPATH=/app", "PYTHONDONTWRITEBYTECODE=1"]),
-        Some(vec!["/app:./python", "/usr:./wrapper/deps/usr"]),
-    )?;
+    let mut wasi_import = WasiModule::create(Some(vec![]), Some(vec![]), Some(vec![]))?;
     wasi_import.add_func(
         "sock_accept",
         Function::create(&FuncType::create([], [])?, Box::new(sock_accept), 0)?,

@@ -10,7 +10,7 @@ cargo build --target wasm32-wasi -p python-wasi-reactor --release
 ./vendor/wasi-vfs/wasi-vfs \
     pack \
     target/wasm32-wasi/release/python-wasi-reactor.wasm \
-    --mapdir /app::./python \
+    --mapdir /app::./src/python \
     --mapdir /usr/local/lib::./vendor/libpython/usr/local/lib \
     -o build/python-wasi-reactor.wasm 
 

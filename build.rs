@@ -8,5 +8,4 @@ fn main() {
     // https://github.com/vmware-labs/webassembly-language-runtimes/issues/79
     println!("cargo:rustc-link-arg=-Wl,-z,stack-size=524288");
     println!("cargo:rustc-link-arg=-mexec-model=reactor");
-    //println!("cargo:rustc-link-arg=-mbulk-memory");
 }
