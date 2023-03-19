@@ -1,6 +1,6 @@
 reactor:
   watch: "src/**/*"
-  command: "./build.sh"
+  command: "./dev/build.sh"
 
 deno:
   watch: "deno/**/*.ts"

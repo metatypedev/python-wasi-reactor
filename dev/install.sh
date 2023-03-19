@@ -2,16 +2,10 @@
 
 set -e
 
-WASI_SDK_VERSION=wasi-sdk-19
+source dev/lock.sh
 
-WASI_VFS_VERSION=v0.2.0
 WASI_VFS_DL=https://github.com/kateinoigakukun/wasi-vfs/releases/download/${WASI_VFS_VERSION}/libwasi_vfs-wasm32-unknown-unknown.zip
-
-LIBPYTHON_VERSION=libpython-3.11.1
-LIBPYTHON_DL=https://github.com/assambar/webassembly-language-runtimes/releases/download/python%2F3.11.1%2B20230223-8a6223c/libpython-3.11.1.tar.gz
-
-rm -rf vendor
-mkdir vendor
+LIBPYTHON_DL=https://github.com/assambar/webassembly-language-runtimes/releases/download/python%2F3.11.1%2B20230223-8a6223c/${LIBPYTHON_VERSION}.tar.gz
 
 case "$(uname -s)" in
     Linux*)     
@@ -22,8 +16,13 @@ case "$(uname -s)" in
         WASI_SDK_DL=https://github.com/WebAssembly/wasi-sdk/releases/download/${WASI_SDK_VERSION}/${WASI_SDK_VERSION}.0-macos.tar.gz
         WASI_VFS_CLI_DL=https://github.com/kateinoigakukun/wasi-vfs/releases/download/${WASI_VFS_VERSION}/wasi-vfs-cli-aarch64-apple-darwin.zip
         ;;
-    *)          echo "Unknown OS"; exit 1
+    *)
+        echo "Unknown OS"
+        exit 1
 esac
+
+rm -rf vendor
+mkdir vendor
 
 curl -fsSL ${WASI_SDK_DL} -o vendor/${WASI_SDK_VERSION}.tar.gz
 tar -xf vendor/${WASI_SDK_VERSION}.tar.gz -C vendor

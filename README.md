@@ -32,7 +32,7 @@ improving the runtime.
 [Wasmedge-bindgen](https://github.com/second-state/wasmedge-bindgen) has been
 chosen over [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen) because of
 its focus on the Rust/WASM ecosystem and the support of the CNCF.
-[wit-bindgen](https://github.com/bytecodealliance/wit-bindgen) may also be
+[Wit-bindgen](https://github.com/bytecodealliance/wit-bindgen) may also be
 interesting to consider in the future.
 
 ### Deno host
@@ -64,8 +64,8 @@ cargo run -p wasmedge
 Install [Whiz](https://github.com/zifeo/whiz) or manually run.
 
 ```bash
-./install.sh
-./build.sh
+./dev/install.sh
+./dev/build.sh
 
 # enable optimization and compression
 ./build.sh --release
