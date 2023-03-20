@@ -1,5 +1,6 @@
 import Context from "https://deno.land/std@0.178.0/wasi/snapshot_preview1.ts";
-import { Memory } from "./memory.ts";
+import { Memory } from "https://raw.githubusercontent.com/metatypedev/metatype/main/typegate/src/runtimes/python_wasi/memory.ts";
+// import { Memory } from "../../metatype/typegate/src/runtimes/python_wasi/memory.ts";
 
 const path = "./build/python-wasi-reactor.wasm";
 

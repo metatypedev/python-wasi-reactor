@@ -20,6 +20,6 @@ if [[ "$1" = "--release" ]]; then
     OUT=python${PYTHON_VERSION}-wasi-reactor.wasm 
     mv build/python-wasi-reactor.wasm build/${OUT}
     wasm-opt -Oz build/${OUT} -o build/${OUT}
-    tar cvzf build/${OUT}.tar.gz build/${OUT}
+    tar cvzf build/${OUT}.tar.gz -C build ${OUT}
 fi
 
