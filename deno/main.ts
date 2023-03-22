@@ -33,6 +33,8 @@ const instance = new WebAssembly.Instance(module, {
 const memory = new Memory(instance.exports);
 
 context.initialize(instance);
+console.log("exports:", Object.keys(instance.exports));
+
 const { init, apply, register } = instance.exports as Record<
   string,
   CallableFunction

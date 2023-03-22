@@ -22,6 +22,22 @@ to provide a WASI Python runtime in reactor mode. In a reactor, the WASM guest
 instance remains alive and and reacts to events from the host
 ([learn more](https://github.com/bytecodealliance/wasmtime/blob/main/docs/WASI-rationale.md#why-not-async)).
 
+The runtime exports the following WASM exports:
+
+- init(): intialize Python and load plugin library
+- register(name: String, code: String): register Python lambda code with a name
+  (single argument)
+- unregister(name: String): unregister given lambda
+- apply(id: i32, name: String, args: String): run the given lambda with a run id
+  number and its argument (JSON decoded before being passed to the lambda)
+- allocate: Wasmedge-bindgen memory allocation
+- deallocate: Wasmedge-bindgen memory deallocation
+
+It will also require the following imports:
+
+- callback(id: i32, value: i32): async return of apply with id and pointer to
+  result
+
 This is **experimental** and might not work as expected. Please report any
 [issues](https://github.com/metatypedev/python-wasi-reactor/issues) you find or
 [contribute](https://github.com/metatypedev/python-wasi-reactor/issues) back
