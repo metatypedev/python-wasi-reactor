@@ -35,7 +35,7 @@ pub fn register(name: String, code: String) -> Result<String, String> {
         let module = py.import("plugin")?;
         let f = py.eval(&code, None, None)?;
         let ret = module
-            .getattr("fs")?
+            .getattr("lambdas")?
             .downcast::<PyDict>()?
             .set_item(name.clone(), f)?;
         Ok::<String, PyErr>(name)
@@ -48,7 +48,7 @@ pub fn unregister(name: String) -> Result<String, String> {
     Python::with_gil(|py| {
         let module = py.import("plugin")?;
         let ret = module
-            .getattr("fs")?
+            .getattr("lambdas")?
             .downcast::<PyDict>()?
             .del_item(name.clone())?;
         Ok::<String, PyErr>(name)
@@ -64,7 +64,7 @@ pub fn apply(id: i32, name: String, args: String) -> u8 {
             Python::with_gil(|py| {
                 let module = py.import("plugin")?;
                 let native = pythonize::pythonize(py, &pyargs)?;
-                let pyret = module.getattr("fs")?.get_item(name)?.call1((native,))?;
+                let pyret = module.getattr("lambdas")?.get_item(name)?.call1((native,))?;
                 let json: serde_json::Value = pythonize::depythonize(pyret)?;
                 Ok::<serde_json::Value, PyErr>(json)
             })
