@@ -30,7 +30,7 @@ fn reactor(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 }
 
 #[wasmedge_bindgen]
-pub fn register(name: String, code: String) -> Result<String, String> {
+pub fn register_lambda(name: String, code: String) -> Result<String, String> {
     Python::with_gil(|py| {
         let module = py.import("plugin")?;
         let f = py.eval(&code, None, None)?;
@@ -44,7 +44,7 @@ pub fn register(name: String, code: String) -> Result<String, String> {
 }
 
 #[wasmedge_bindgen]
-pub fn unregister(name: String) -> Result<String, String> {
+pub fn unregister_lambda(name: String) -> Result<String, String> {
     Python::with_gil(|py| {
         let module = py.import("plugin")?;
         let ret = module
@@ -57,7 +57,27 @@ pub fn unregister(name: String) -> Result<String, String> {
 }
 
 #[wasmedge_bindgen]
-pub fn apply(id: i32, name: String, args: String) -> u8 {
+pub fn register_module(name: String, code: String) -> Result<String, String> {
+    Python::with_gil(|py| {
+        let module = py.import("plugin")?;
+        let file_name = name.clone() + ".py";
+        let module_name = name.clone();
+        let func = PyModule::from_code(
+            py, 
+            &code, 
+            &file_name,
+            &module_name
+        )?
+        .getattr(&*name)?;
+        module.add(&name, func)?;
+        Ok::<String, PyErr>(name)
+    })
+    .map_err(|e| e.to_string())
+}
+
+
+#[wasmedge_bindgen]
+pub fn apply_lambda(id: i32, name: String, args: String) -> u8 {
     let run = serde_json::from_str::<serde_json::Value>(&args)
         .map_err(|e| e.to_string())
         .and_then(|pyargs| {
@@ -65,6 +85,41 @@ pub fn apply(id: i32, name: String, args: String) -> u8 {
                 let module = py.import("plugin")?;
                 let native = pythonize::pythonize(py, &pyargs)?;
                 let pyret = module.getattr("lambdas")?.get_item(name)?.call1((native,))?;
+                let json: serde_json::Value = pythonize::depythonize(pyret)?;
+                Ok::<serde_json::Value, PyErr>(json)
+            })
+            .map_err(|e| e.to_string())
+        })
+        .and_then(|pyret| Ok(pyret.to_string()));
+    match run {
+        Ok(res) => {
+            let ptr = host_result(true, res);
+            unsafe {
+                host::callback(id, ptr);
+            };
+            0
+        }
+        Err(e) => {
+            let ptr = host_result(false, e);
+            unsafe {
+                host::callback(id, ptr);
+            };
+            1
+        }
+    }
+}
+
+#[wasmedge_bindgen]
+pub fn apply_def(id: i32, name: String, args: String) -> u8 {
+    let run = serde_json::from_str::<serde_json::Value>(&args)
+        .map_err(|e| e.to_string())
+        .and_then(|pyargs| {
+            Python::with_gil(|py| {
+                let module = py.import("plugin")?;
+                let native = pythonize::pythonize(py, &pyargs)?;
+                let pyret = module
+                    .getattr(&*name)?
+                    .call1((native,))?;
                 let json: serde_json::Value = pythonize::depythonize(pyret)?;
                 Ok::<serde_json::Value, PyErr>(json)
             })

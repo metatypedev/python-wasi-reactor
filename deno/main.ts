@@ -35,14 +35,14 @@ const memory = new Memory(instance.exports);
 context.initialize(instance);
 console.log("exports:", Object.keys(instance.exports));
 
-const { init, apply, register } = instance.exports as Record<
+const { init, apply_lambda, register_lambda } = instance.exports as Record<
   string,
   CallableFunction
 >;
 init();
 
 const op = memory.decode(
-  register(...memory.encode("foo", "lambda x:  x['a'] + 'a'"))
+  register_lambda(...memory.encode("foo", "lambda x:  x['a'] + 'a'"))
 );
 
 if (op.error) {
@@ -53,7 +53,7 @@ if (op.error) {
 for (let i = 0; i < 3; i += 1) {
   console.time("foo");
   const ret = memory.decode(
-    apply(...memory.encode(i, "foo", JSON.stringify({ a: `hello${i}` })))
+    apply_lambda(...memory.encode(i, "foo", JSON.stringify({ a: `hello${i}` })))
   );
   if (ret.data) {
     console.log("exit status", i, ":", ret.data[0]);
