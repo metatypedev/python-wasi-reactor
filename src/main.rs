@@ -57,26 +57,6 @@ pub fn unregister_lambda(name: String) -> Result<String, String> {
 }
 
 #[wasmedge_bindgen]
-pub fn register_module(name: String, code: String) -> Result<String, String> {
-    Python::with_gil(|py| {
-        let module = py.import("plugin")?;
-        let file_name = name.clone() + ".py";
-        let module_name = name.clone();
-        let func = PyModule::from_code(
-            py, 
-            &code, 
-            &file_name,
-            &module_name
-        )?
-        .getattr(&*name)?;
-        module.add(&name, func)?;
-        Ok::<String, PyErr>(name)
-    })
-    .map_err(|e| e.to_string())
-}
-
-
-#[wasmedge_bindgen]
 pub fn apply_lambda(id: i32, name: String, args: String) -> u8 {
     let run = serde_json::from_str::<serde_json::Value>(&args)
         .map_err(|e| e.to_string())
@@ -107,6 +87,30 @@ pub fn apply_lambda(id: i32, name: String, args: String) -> u8 {
             1
         }
     }
+}
+
+#[wasmedge_bindgen]
+pub fn register_def(name: String, code: String) -> Result<String, String> {
+    Python::with_gil(|py| {
+        let module = py.import("plugin")?;
+        let func = PyModule::from_code(
+            py, &code, "", ""
+        )?
+        .getattr(&*name)?;
+        module.add(&name, func)?;
+        Ok::<String, PyErr>(name)
+    })
+    .map_err(|e| e.to_string())
+}
+
+#[wasmedge_bindgen]
+pub fn unregister_def(name: String) -> Result<String, String> {
+    Python::with_gil(|py| {
+        let module = py.import("plugin")?;
+        module.del_item(name.clone())?;
+        Ok::<String, PyErr>(name)
+    })
+    .map_err(|e| e.to_string())
 }
 
 #[wasmedge_bindgen]
