@@ -54,17 +54,17 @@ init();
 const tests = [
   {
     name: 'concat', 
-    args: ['A'], // what if more than one arg ?
+    args: ['A', 'B', 1234],
     code: `
-def concat(a):
-  return f"Simple concat: {a}!"
+def concat(a, b, c):
+  return f"Simple concat: {a}{b}{c}!"
     `
   },
   {
     name: 'sayHello', 
-    args: [''],
+    args: [],
     code: `
-def sayHello(x):
+def sayHello():
   return "Hello World"
     `
   },
@@ -84,9 +84,8 @@ for (const {name, code} of tests) {
 // call
 let id = 1;
 for (const {name, args} of tests) {
-  const inputs = args.map((a) => JSON.stringify(a));
   const ret = memory.decode(
-    apply_def(...memory.encode(id++, name, ...inputs))
+    apply_def(...memory.encode(id++, name, JSON.stringify(args)))
   );
   console.log(ret);
   if (ret.data ) {

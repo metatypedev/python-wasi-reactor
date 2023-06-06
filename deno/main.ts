@@ -42,7 +42,7 @@ const { init, apply_lambda, register_lambda } = instance.exports as Record<
 init();
 
 const op = memory.decode(
-  register_lambda(...memory.encode("foo", "lambda x:  x['a'] + 'a'"))
+  register_lambda(...memory.encode("foo", "lambda x, y:  x['a'] + str(y)"))
 );
 
 if (op.error) {
@@ -52,8 +52,9 @@ if (op.error) {
 
 for (let i = 0; i < 3; i += 1) {
   console.time("foo");
+  const args = [{ a: `hello` }, i];
   const ret = memory.decode(
-    apply_lambda(...memory.encode(i, "foo", JSON.stringify({ a: `hello${i}` })))
+    apply_lambda(...memory.encode(i, "foo", JSON.stringify(args)))
   );
   if (ret.data) {
     console.log("exit status", i, ":", ret.data[0]);

@@ -3,7 +3,7 @@
 #![no_main]
 
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyTuple};
 
 use wasmedge_bindgen_macro::wasmedge_bindgen;
 mod memory;
@@ -15,6 +15,27 @@ pub mod host {
     extern "C" {
         pub fn callback(id: i32, value: i32) -> ();
     }
+}
+
+pub fn collect_args_from_json(args_str: &str) -> Result<Vec<serde_json::Value>, String> {
+    let args = serde_json::from_str::<serde_json::Value>(&args_str)
+        .map_err(|e| e.to_string())?;
+    if args.is_array() {
+        let res = match args.as_array() {
+            Some(arr) => arr.to_vec(),
+            None => vec![]
+        };
+        Ok(res)
+    } else {
+        Err("string must be a json array".to_string())
+    }
+}
+
+pub fn pythonize_args(py: Python, pyargs: Vec<serde_json::Value>) -> &PyTuple {
+    let eval_args = pyargs
+        .iter()
+        .map(|value| pythonize::pythonize(py, value).unwrap());
+    PyTuple::new(py, eval_args)
 }
 
 #[pyfunction]
@@ -58,13 +79,13 @@ pub fn unregister_lambda(name: String) -> Result<String, String> {
 
 #[wasmedge_bindgen]
 pub fn apply_lambda(id: i32, name: String, args: String) -> u8 {
-    let run = serde_json::from_str::<serde_json::Value>(&args)
+    let run = collect_args_from_json(&args)
         .map_err(|e| e.to_string())
         .and_then(|pyargs| {
             Python::with_gil(|py| {
                 let module = py.import("plugin")?;
-                let native = pythonize::pythonize(py, &pyargs)?;
-                let pyret = module.getattr("lambdas")?.get_item(name)?.call1((native,))?;
+                let native = pythonize_args(py, pyargs);
+                let pyret = module.getattr("lambdas")?.get_item(name)?.call1(native)?;
                 let json: serde_json::Value = pythonize::depythonize(pyret)?;
                 Ok::<serde_json::Value, PyErr>(json)
             })
@@ -115,15 +136,15 @@ pub fn unregister_def(name: String) -> Result<String, String> {
 
 #[wasmedge_bindgen]
 pub fn apply_def(id: i32, name: String, args: String) -> u8 {
-    let run = serde_json::from_str::<serde_json::Value>(&args)
+    let run = collect_args_from_json(&args)
         .map_err(|e| e.to_string())
         .and_then(|pyargs| {
             Python::with_gil(|py| {
                 let module = py.import("plugin")?;
-                let native = pythonize::pythonize(py, &pyargs)?;
+                let native = pythonize_args(py, pyargs);
                 let pyret = module
                     .getattr(&*name)?
-                    .call1((native,))?;
+                    .call1(native)?;
                 let json: serde_json::Value = pythonize::depythonize(pyret)?;
                 Ok::<serde_json::Value, PyErr>(json)
             })
