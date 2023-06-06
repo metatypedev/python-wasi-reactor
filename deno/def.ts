@@ -68,6 +68,14 @@ def sayHello():
   return "Hello World"
     `
   },
+  {
+    name: 'raiseErrorIdentity', 
+    args: ["some error message for test"],
+    code: `
+def raiseErrorIdentity(x):
+  raise Exception(str(x))
+    `
+  },
 ]
 
 // register
