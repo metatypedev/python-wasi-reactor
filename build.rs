@@ -6,6 +6,8 @@ fn main() {
     println!("cargo:rustc-link-arg=-Wl,--export=apply_def");
     println!("cargo:rustc-link-arg=-Wl,--export=register_def");
     println!("cargo:rustc-link-arg=-Wl,--export=unregister_def");
+    println!("cargo:rustc-link-arg=-Wl,--export=register_module");
+    println!("cargo:rustc-link-arg=-Wl,--export=unregister_module");
     println!("cargo:rustc-link-arg=-Wl,--export=allocate");
     println!("cargo:rustc-link-arg=-Wl,--export=deallocate");
     // https://github.com/vmware-labs/webassembly-language-runtimes/issues/79

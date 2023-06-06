@@ -38,6 +38,15 @@ pub fn pythonize_args(py: Python, pyargs: Vec<serde_json::Value>) -> &PyTuple {
     PyTuple::new(py, eval_args)
 }
 
+pub fn recurse_dot_attr(py: &PyModule, name: String) -> PyResult<&PyAny> {
+    let parts = name.split(".");
+    let mut curr: &PyAny = py;
+    for sub in parts {
+        curr = curr.getattr(sub)?;
+    }
+    Ok(curr)
+}
+
 #[pyfunction]
 fn reverse(str: String) -> PyResult<String> {
     println!("reverse: {}", str);
@@ -142,9 +151,7 @@ pub fn apply_def(id: i32, name: String, args: String) -> u8 {
             Python::with_gil(|py| {
                 let module = py.import("plugin")?;
                 let native = pythonize_args(py, pyargs);
-                let pyret = module
-                    .getattr(&*name)?
-                    .call1(native)?;
+                let pyret = recurse_dot_attr(module, name)?.call1(native)?;
                 let json: serde_json::Value = pythonize::depythonize(pyret)?;
                 Ok::<serde_json::Value, PyErr>(json)
             })
@@ -167,6 +174,34 @@ pub fn apply_def(id: i32, name: String, args: String) -> u8 {
             1
         }
     }
+}
+
+#[wasmedge_bindgen]
+pub fn register_module(name: String, code: String) -> Result<String, String> {
+    Python::with_gil(|py| {
+        let module = py.import("plugin")?;
+        let filename = name.clone() + ".py";
+        let imp_module = PyModule::from_code(
+            py,
+            &code,
+            &filename,
+            &name
+        )?;
+        module.add_submodule(imp_module)?;
+        // module.add(&name, imp_module)?;
+        Ok::<String, PyErr>(name)
+    })
+    .map_err(|e| e.to_string())
+}
+
+#[wasmedge_bindgen]
+pub fn unregister_module(name: String, code: String) -> Result<String, String> {
+    Python::with_gil(|py| {
+        let module = py.import("plugin")?;
+        module.del_item(&name)?;
+        Ok::<String, PyErr>(name)
+    })
+    .map_err(|e| e.to_string())
 }
 
 #[no_mangle]

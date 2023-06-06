@@ -76,6 +76,17 @@ def raiseErrorIdentity(x):
   raise Exception(str(x))
     `
   },
+  {
+    name: 'sum', 
+    args: new Array(100).fill(1),
+    code: `
+def sum(*args):
+  s = 0
+  for n in args:
+    s += n
+  return s
+    `
+  },
 ]
 
 // register
