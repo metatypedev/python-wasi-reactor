@@ -1,4 +1,3 @@
-
 use wasmedge_bindgen_macro::wasmedge_bindgen;
 use crate::memory::host_result;
 use crate::core::*;

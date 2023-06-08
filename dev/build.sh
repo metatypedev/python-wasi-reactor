@@ -7,7 +7,7 @@ source dev/lock.sh
 rm -rf build
 mkdir build
 
-cargo build --target wasm32-wasi -p python-wasi-reactor --release
+cargo build --target wasm32-wasi --features "wasm" -p python-wasi-reactor --release
 
 ./vendor/wasi-vfs/wasi-vfs \
     pack \

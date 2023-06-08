@@ -11,5 +11,7 @@ rustflags = [
     "-l", "wasi-emulated-process-clocks"
 ]
 
+[target.x86_64-unknown-linux-gnu]
+
 [env]
 PYO3_NO_PYTHON = "1"
