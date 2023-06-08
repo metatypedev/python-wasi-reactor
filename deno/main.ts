@@ -1,39 +1,5 @@
-import Context from "https://deno.land/std@0.178.0/wasi/snapshot_preview1.ts";
-import { Memory } from "https://raw.githubusercontent.com/metatypedev/metatype/main/typegate/src/runtimes/python_wasi/memory.ts";
-// import { Memory } from "../../metatype/typegate/src/runtimes/python_wasi/memory.ts";
-
-const path = "./build/python-wasi-reactor.wasm";
-
-const context = new Context({
-  env: {},
-  args: [],
-  preopens: {},
-});
-
-const binary = await Deno.readFile(path);
-const module = await WebAssembly.compile(binary);
-const instance = new WebAssembly.Instance(module, {
-  wasi_snapshot_preview1: {
-    sock_accept(fd: any, flags: any) {
-      return fd;
-    },
-    ...context.exports,
-  },
-  host: {
-    callback(id: number, ptr: number) {
-      const ret = memory.decode(ptr);
-      if (ret.data) {
-        console.log("success callback", id, ":", JSON.parse(ret.data[0]));
-      } else {
-        console.log("error callback", id, ":", ret.error);
-      }
-    },
-  },
-});
-const memory = new Memory(instance.exports);
-
-context.initialize(instance);
-console.log("exports:", Object.keys(instance.exports));
+import { getAssemblyInstance } from "./common.ts";
+const { instance, memory } = await getAssemblyInstance();
 
 const { init, apply_lambda, register_lambda } = instance.exports as Record<
   string,
