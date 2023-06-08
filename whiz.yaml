@@ -7,3 +7,9 @@ deno:
   command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/main.ts"
   depends_on:
     - reactor
+
+deno_def:
+  watch: "deno/**/*.ts"
+  command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/def.ts"
+  depends_on:
+    - reactor

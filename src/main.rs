@@ -4,16 +4,8 @@
 
 use pyo3::prelude::*;
 
-use wasmedge_bindgen_macro::wasmedge_bindgen;
-
-use python_wasi_reactor::memory::host_result;
-
-pub mod host {
-    #[link(wasm_import_module = "host")]
-    extern "C" {
-        pub fn callback(id: i32, value: i32) -> ();
-    }
-}
+#[allow(unused_imports)]
+use python_wasi_reactor::export::*;
 
 #[pyfunction]
 fn reverse(str: String) -> PyResult<String> {
@@ -25,78 +17,6 @@ fn reverse(str: String) -> PyResult<String> {
 fn reactor(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(reverse, m)?)?;
     Ok(())
-}
-
-#[wasmedge_bindgen]
-pub fn register_lambda(name: String, code: String) -> Result<String, String> {
-    python_wasi_reactor::lambda::register(name, code)
-}
-
-#[wasmedge_bindgen]
-pub fn unregister_lambda(name: String) -> Result<String, String> {
-    python_wasi_reactor::lambda::unregister(name)
-}
-
-#[wasmedge_bindgen]
-pub fn apply_lambda(id: i32, name: String, args: String) -> u8 {
-    let run = python_wasi_reactor::lambda::apply(name, args);
-    match run {
-        Ok(res) => {
-            let ptr = host_result(true, res);
-            unsafe {
-                host::callback(id, ptr);
-            };
-            0
-        }
-        Err(e) => {
-            let ptr = host_result(false, e);
-            unsafe {
-                host::callback(id, ptr);
-            };
-            1
-        }
-    }
-}
-
-#[wasmedge_bindgen]
-pub fn register_def(name: String, code: String) -> Result<String, String> {
-    python_wasi_reactor::defun::register(name, code)
-}
-
-#[wasmedge_bindgen]
-pub fn unregister_def(name: String) -> Result<String, String> {
-    python_wasi_reactor::defun::unregister(name)
-}
-
-#[wasmedge_bindgen]
-pub fn apply_def(id: i32, name: String, args: String) -> u8 {
-    let run = python_wasi_reactor::defun::apply(name, args);
-    match run {
-        Ok(res) => {
-            let ptr = host_result(true, res);
-            unsafe {
-                host::callback(id, ptr);
-            };
-            0
-        }
-        Err(e) => {
-            let ptr = host_result(false, e);
-            unsafe {
-                host::callback(id, ptr);
-            };
-            1
-        }
-    }
-}
-
-#[wasmedge_bindgen]
-pub fn register_module(name: String, code: String) -> Result<String, String> {
-    python_wasi_reactor::module::register(name, code)
-}
-
-#[wasmedge_bindgen]
-pub fn unregister_module(name: String) -> Result<String, String> {
-    python_wasi_reactor::module::unregister(name)
 }
 
 #[no_mangle]

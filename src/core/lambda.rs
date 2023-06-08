@@ -1,15 +1,16 @@
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
-use crate::common::*;
+use crate::core::common::*;
 
 pub fn register(name: String, code: String) -> Result<String, String> {
     Python::with_gil(|py| {
         let module = py.import("plugin")?;
-        let func = PyModule::from_code(
-            py, &code, "", ""
-        )?
-        .getattr(&*name)?;
-        module.add(&name, func)?;
+        let f = py.eval(&code, None, None)?;
+        let _ = module
+            .getattr("lambdas")?
+            .downcast::<PyDict>()?
+            .set_item(name.clone(), f)?;
         Ok::<String, PyErr>(name)
     })
     .map_err(|e| e.to_string())
@@ -18,7 +19,10 @@ pub fn register(name: String, code: String) -> Result<String, String> {
 pub fn unregister(name: String) -> Result<String, String> {
     Python::with_gil(|py| {
         let module = py.import("plugin")?;
-        module.del_item(name.clone())?;
+        let _ = module
+            .getattr("lambdas")?
+            .downcast::<PyDict>()?
+            .del_item(name.clone())?;
         Ok::<String, PyErr>(name)
     })
     .map_err(|e| e.to_string())
@@ -31,7 +35,7 @@ pub fn apply(name: String, args: String) -> Result<String, String>{
             Python::with_gil(|py| {
                 let module = py.import("plugin")?;
                 let native = pythonize_args(py, pyargs);
-                let pyret = recurse_dot_attr(module, name)?.call1(native)?;
+                let pyret = module.getattr("lambdas")?.get_item(name)?.call1(native)?;
                 let json: serde_json::Value = pythonize::depythonize(pyret)?;
                 Ok::<serde_json::Value, PyErr>(json)
             })
