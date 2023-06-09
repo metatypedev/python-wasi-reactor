@@ -160,9 +160,26 @@ fn cross_module_call() {
         assert_eq!(reg.unwrap(), md.to_string().clone());
     }
 
-    // call mod_b.C > mod_b.B > mod_a.A
+    // call main.C > mod_b.B > mod_a.A
     let [_, callee_c, _] = samples[2];
     let app = defun::apply(callee_c.to_string(), "[]".to_string());
     assert!(app.is_ok());
     assert_eq!(app.unwrap(), "\"From A!\"");
+}
+
+#[test]
+fn bindfn_should_never_panic() {
+    init();
+
+    assert!(lambda::unregister("non_existent".to_string()).is_err());
+    assert!(defun::unregister("non_existent".to_string()).is_err());
+    assert!(module::unregister("non_existent".to_string()).is_err());
+
+    assert!(defun::apply("non_existent".to_string(), "invalid json".to_string()).is_err());
+    assert!(lambda::apply("non_existent".to_string(), "invalid json".to_string()).is_err());
+    assert!(lambda::apply("non_existent".to_string(), "invalid json".to_string()).is_err());
+
+    assert!(defun::register("".to_string(), "invalid python".to_string()).is_err());
+    assert!(lambda::register("".to_string(), "invalid python".to_string()).is_err());
+    assert!(lambda::register("".to_string(), "invalid python".to_string()).is_err());
 }
