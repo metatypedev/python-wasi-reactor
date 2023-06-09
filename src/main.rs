@@ -3,6 +3,8 @@
 
 #![cfg_attr(feature = "wasm", no_main)]
 
+#[allow(unused_imports)]
+use pyo3::prelude::*;
 
 #[allow(unused_imports)]
 #[cfg(feature = "wasm")]
