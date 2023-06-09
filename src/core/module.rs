@@ -20,7 +20,7 @@ pub fn register(name: String, code: String) -> Result<String, String> {
 pub fn unregister(name: String) -> Result<String, String> {
     Python::with_gil(|py| {
         let module = py.import("plugin")?;
-        module.del_item(&name)?;
+        module.delattr(&*name)?;
         Ok::<String, PyErr>(name)
     })
     .map_err(|e| e.to_string())

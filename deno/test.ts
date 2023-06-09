@@ -57,7 +57,7 @@ Deno.test("wasm bindings", async (t) => {
             apply_def(...memory.encode(0, name, JSON.stringify(args)))
         );
 
-        assertEquals({data: ['"hello1234"']}, global.ret)
+        assertEquals({data: ['"hello1234"']}, global.ret);
     });
 
     await t.step("module", () => {
@@ -80,7 +80,7 @@ Deno.test("wasm bindings", async (t) => {
             const _ = memory.decode(
                 apply_def(...memory.encode(0, callee, JSON.stringify(args)))
             );
-            assertEquals({data: [JSON.stringify(name)]}, global.ret)
+            assertEquals({data: [JSON.stringify(name)]}, global.ret);
         }
     });
 });

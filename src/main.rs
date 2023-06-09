@@ -1,26 +1,15 @@
 // https://stackoverflow.com/a/65980693/3293227
 // https://github.com/rust-lang/rust/pull/79997#issuecomment-759856446
 
+#![cfg_attr(feature = "wasm", no_main)]
 
-#![no_main]
-
-use pyo3::prelude::*;
 
 #[allow(unused_imports)]
 #[cfg(feature = "wasm")]
 use python_wasi_reactor::export::*;
 
-#[pyfunction]
-fn reverse(str: String) -> PyResult<String> {
-    println!("reverse: {}", str);
-    Ok(str.chars().rev().collect::<String>())
-}
-
-#[pymodule]
-fn reactor(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(reverse, m)?)?;
-    Ok(())
-}
+#[cfg(feature = "wasm")]
+use python_wasi_reactor::core::rustpy::*;
 
 #[cfg(feature = "wasm")]
 #[no_mangle]
