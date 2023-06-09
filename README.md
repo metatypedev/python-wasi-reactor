@@ -24,18 +24,24 @@ instance remains alive and and reacts to events from the host
 
 The runtime exports the following WASM exports:
 
-- init(): intialize Python and load plugin library
-- register(name: String, code: String): register Python lambda code with a name
-  (single argument)
-- unregister(name: String): unregister given lambda
-- apply(id: i32, name: String, args: String): run the given lambda with a run id
+- `init()`: intialize Python and load plugin library
+- `register_lambda(name: String, code: String)`: register Python lambda code with a name
+- `unregister_lambda(name: String)`: unregister given lambda
+- `apply_lambda(id: i32, name: String, args: String)`: run the given lambda with a run id
   number and its argument (JSON decoded before being passed to the lambda)
-- allocate: Wasmedge-bindgen memory allocation
-- deallocate: Wasmedge-bindgen memory deallocation
+- `register_def(name: String, code: String)`: register Python function with a name
+- `unregister_def(name: String)`: unregister given function
+- `apply_def(id: i32, name: String, args: String)`: run the given function with a run id
+  number and its argument (JSON decoded before being passed to the function)
+- `register_module(name: String, code: String)`: register Python code as a module with a name
+- `unregister_module(name: String)`: unregister given module
+
+- `allocate`: Wasmedge-bindgen memory allocation
+- `deallocate`: Wasmedge-bindgen memory deallocation
 
 It will also require the following imports:
 
-- callback(id: i32, value: i32): async return of apply with id and pointer to
+- `callback(id: i32, value: i32)`: async return of apply with id and pointer to
   result
 
 This is **experimental** and might not work as expected. Please report any
