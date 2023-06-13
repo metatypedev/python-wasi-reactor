@@ -13,21 +13,6 @@ pub fn callback(_caller: Caller, _args: Vec<WasmValue>) -> Result<Vec<WasmValue>
     Ok(vec![])
 }
 
-pub fn bindgen_exec(bg: &mut Bindgen, callee: &str, args: Vec<Param>) {
-    match bg.run_wasm(callee, args) {
-        Ok(rv) => {
-            println!(
-                "Run bindgen -- {}: {:?}",
-                callee,
-                rv.unwrap().pop().unwrap().downcast::<String>().unwrap()
-            );
-        }
-        Err(e) => {
-            println!("Run bindgen -- {} FAILED {:?}", callee, e);
-        }
-    }
-}
-
 fn main() -> anyhow::Result<()> {
     // start config
     let common_options = CommonConfigOptions::default()
@@ -71,28 +56,32 @@ fn main() -> anyhow::Result<()> {
     let mut bg = Bindgen::new(vm);
 
     // basic test
-    bindgen_exec(&mut bg, "identity", vec![Param::String("hello identity from guest")]);
+    bg.run_wasm("identity", vec![Param::String("hello identity from guest")])
+        .and_then(|rv| {
+            let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
+            println!("Run bindgen -- identity {:?}", ret);
+            Ok(())
+        })?;
 
-    bindgen_exec(&mut bg, "register_lambda", vec![
+    let args = vec![
         Param::String("say_hello"),
         Param::String("lambda name: f\"Hello {name}\"")
-    ]);
+    ];
+    bg.run_wasm("register_lambda", args)
+        .and_then(|rv| {
+            let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
+            println!("Run bindgen -- register_lambda {:?}", ret);
+            Ok(())
+        })?;
+
+    // bindgen_exec(&mut bg, "register_lambda", vec![
+    //     Param::String("say_hello"),
+    //     Param::String("lambda name: f\"Hello {name}\"")
+    // ]);
 
     // bindgen_exec(&mut bg, "apply_lambda", vec![
     //     Param::String("say_hello"),
     //     Param::String("[\"Jake!\"]") // json array
     // ]);
-
-    // match bg.run_wasm("register_lambda", args) {
-    //     Ok(rv) => {
-    //         println!(
-    //             "Run bindgen -- register_lambda: {:?}",
-    //             rv.unwrap().pop().unwrap().downcast::<String>().unwrap()
-    //         );
-    //     }
-    //     Err(e) => {
-    //         println!("Run bindgen -- register_lambda FAILED {:?}", e);
-    //     }
-    // }
     Ok(())
 }

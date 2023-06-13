@@ -19,7 +19,8 @@ use python_wasi_reactor::core::rustpy::*;
 pub extern "C" fn init() {
     println!("[guest] Python init");
 
-    std::env::set_var("PYTHONHOME", "/usr/local/lib");
+    // fix: python cannot be found on wasmedge
+    // std::env::set_var("PYTHONHOME", "/usr/local/lib");
     std::env::set_var("PYTHONPATH", "/app");
     std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
 
