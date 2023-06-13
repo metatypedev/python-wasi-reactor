@@ -6,14 +6,28 @@ use wasmedge_sdk_bindgen::{Bindgen, Param};
  
 #[host_function]
 pub fn callback(_caller: Caller, _args: Vec<WasmValue>) -> Result<Vec<WasmValue>, HostFuncError> {
-    println!("Hello, world from host callback!");
+    println!("[host] callback");
     for arg in _args {
         println!(" arg: {:?}", arg);
     }
     Ok(vec![])
 }
- 
-#[cfg_attr(test, test)]
+
+pub fn bindgen_exec(bg: &mut Bindgen, callee: &str, args: Vec<Param>) {
+    match bg.run_wasm(callee, args) {
+        Ok(rv) => {
+            println!(
+                "Run bindgen -- {}: {:?}",
+                callee,
+                rv.unwrap().pop().unwrap().downcast::<String>().unwrap()
+            );
+        }
+        Err(e) => {
+            println!("Run bindgen -- {} FAILED {:?}", callee, e);
+        }
+    }
+}
+
 fn main() -> anyhow::Result<()> {
     // start config
     let common_options = CommonConfigOptions::default()
@@ -32,11 +46,11 @@ fn main() -> anyhow::Result<()> {
         .unwrap();
     // end config
     
-    // loads wasm module
+    // load wasm module
     let module = Module::from_file(None, "build/python-wasi-reactor.wasm")?;
  
     // create an import module
-    let import = ImportObjectBuilder::new()
+    let imports = ImportObjectBuilder::new()
         .with_func::<(i32, i32), ()>("callback", callback)?
         .build("host")?;
 
@@ -44,29 +58,41 @@ fn main() -> anyhow::Result<()> {
     let vm = VmBuilder::new()
         .with_config(config)
         .build()?
-        .register_import_module(import)?
+        .register_import_module(imports)?
         .register_module(None, module)?;
 
-    let args = vec![
-        WasmValue::from_i32(1234), // id
-        WasmValue::from_i32(5678), // ptr
-    ];
-    vm.run_func(Some("host"), "callback", args)?;
+    // let args = vec![
+    //     WasmValue::from_i32(1234), // id
+    //     WasmValue::from_i32(5678), // ptr
+    // ];
+    // vm.run_func(Some("host"), "callback", args)?;
     vm.run_func(None, "init", params!())?;
 
     let mut bg = Bindgen::new(vm);
 
     // basic test
-    match bg.run_wasm("identity", vec![Param::String("hello world")]) {
-        Ok(rv) => {
-            println!(
-                "Run bindgen -- identity: {:?}",
-                rv.unwrap().pop().unwrap().downcast::<String>().unwrap()
-            );
-        }
-        Err(e) => {
-            println!("Run bindgen -- identity FAILED {:?}", e);
-        }
-    }
+    bindgen_exec(&mut bg, "identity", vec![Param::String("hello identity from guest")]);
+
+    bindgen_exec(&mut bg, "register_lambda", vec![
+        Param::String("say_hello"),
+        Param::String("lambda name: f\"Hello {name}\"")
+    ]);
+
+    // bindgen_exec(&mut bg, "apply_lambda", vec![
+    //     Param::String("say_hello"),
+    //     Param::String("[\"Jake!\"]") // json array
+    // ]);
+
+    // match bg.run_wasm("register_lambda", args) {
+    //     Ok(rv) => {
+    //         println!(
+    //             "Run bindgen -- register_lambda: {:?}",
+    //             rv.unwrap().pop().unwrap().downcast::<String>().unwrap()
+    //         );
+    //     }
+    //     Err(e) => {
+    //         println!("Run bindgen -- register_lambda FAILED {:?}", e);
+    //     }
+    // }
     Ok(())
 }
