@@ -86,9 +86,13 @@ cargo run -p wasmedge
 Install [Whiz](https://github.com/zifeo/whiz) or manually run.
 
 ```bash
+# build wasi binary (guest)
 ./dev/install.sh
 ./dev/build.sh
-
 # enable optimization and compression
 ./build.sh --release
+
+
+# wasmedge (host)
+cargo run -p wasmedge
 ```

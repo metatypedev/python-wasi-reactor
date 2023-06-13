@@ -10,6 +10,11 @@ pub mod host {
 }
 
 #[wasmedge_bindgen]
+pub fn identity(value: String) -> Result<String, String> {
+    Ok(value)
+}
+
+#[wasmedge_bindgen]
 pub fn register_lambda(name: String, code: String) -> Result<String, String> {
     lambda::register(name, code)
 }

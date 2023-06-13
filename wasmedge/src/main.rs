@@ -1,39 +1,72 @@
-use anyhow::Result;
-use std::time::Instant;
-use wasmedge_sdk::error::HostFuncError;
-use wasmedge_sdk::{host_function, Caller};
-use wasmedge_sys::{Config, ImportObject, Store, Vm, WasmValue};
-
-use wasmedge_sys::{AsImport, FuncType};
-use wasmedge_sys::{Function, WasiModule};
-
+use wasmedge_sdk::{
+    error::HostFuncError, host_function, params, Caller, ImportObjectBuilder, Module,
+    VmBuilder, WasmValue, config::{HostRegistrationConfigOptions, ConfigBuilder, CommonConfigOptions},
+};
+use wasmedge_sdk_bindgen::{Bindgen, Param};
+ 
 #[host_function]
-pub fn sock_accept(
-    _caller: Caller,
-    _args: Vec<WasmValue>,
-) -> Result<Vec<WasmValue>, HostFuncError> {
+pub fn callback(_caller: Caller, _args: Vec<WasmValue>) -> Result<Vec<WasmValue>, HostFuncError> {
+    println!("Hello, world from host callback!");
+    for arg in _args {
+        println!(" arg: {:?}", arg);
+    }
     Ok(vec![])
 }
+ 
+#[cfg_attr(test, test)]
+fn main() -> anyhow::Result<()> {
+    // start config
+    let common_options = CommonConfigOptions::default()
+        .bulk_memory_operations(true)
+        .multi_value(true)
+        .mutable_globals(true)
+        .non_trap_conversions(true)
+        .reference_types(true)
+        .sign_extension_operators(true)
+        .simd(true);
+    let host_options = HostRegistrationConfigOptions::default()
+        .wasi(true);
+    let config = ConfigBuilder::new(common_options)
+        .with_host_registration_config(host_options)
+        .build()
+        .unwrap();
+    // end config
+    
+    // loads wasm module
+    let module = Module::from_file(None, "build/python-wasi-reactor.wasm")?;
+ 
+    // create an import module
+    let import = ImportObjectBuilder::new()
+        .with_func::<(i32, i32), ()>("callback", callback)?
+        .build("host")?;
 
-fn main() -> Result<()> {
-    let mut config = Config::create()?;
-    config.wasi(true);
+    // [!] module order matters
+    let vm = VmBuilder::new()
+        .with_config(config)
+        .build()?
+        .register_import_module(import)?
+        .register_module(None, module)?;
 
-    let mut store = Store::create()?;
-    let mut vm = Vm::create(Some(config), Some(&mut store))?;
-    vm.register_wasm_from_file("extern", "./build/python-wasi-reactor.wasm")?;
+    let args = vec![
+        WasmValue::from_i32(1234), // id
+        WasmValue::from_i32(5678), // ptr
+    ];
+    vm.run_func(Some("host"), "callback", args)?;
+    vm.run_func(None, "init", params!())?;
 
-    let mut wasi_import = WasiModule::create(Some(vec![]), Some(vec![]), Some(vec![]))?;
-    wasi_import.add_func(
-        "sock_accept",
-        Function::create(&FuncType::create([], [])?, Box::new(sock_accept), 0)?,
-    );
-    vm.register_wasm_from_import(ImportObject::Wasi(wasi_import))?;
+    let mut bg = Bindgen::new(vm);
 
-    println!("run");
-    let now = Instant::now();
-    vm.run_registered_function("extern", "_initialize", [])?;
-
-    println!("{:?}: {:?}", now.elapsed(), 2);
+    // basic test
+    match bg.run_wasm("identity", vec![Param::String("hello world")]) {
+        Ok(rv) => {
+            println!(
+                "Run bindgen -- identity: {:?}",
+                rv.unwrap().pop().unwrap().downcast::<String>().unwrap()
+            );
+        }
+        Err(e) => {
+            println!("Run bindgen -- identity FAILED {:?}", e);
+        }
+    }
     Ok(())
 }

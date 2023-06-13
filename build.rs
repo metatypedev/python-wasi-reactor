@@ -3,6 +3,7 @@ fn main() {
     {
         println!("cargo:rustc-link-arg=-Wl,--export=init");
 
+        println!("cargo:rustc-link-arg=-Wl,--export=identity");
         println!("cargo:rustc-link-arg=-Wl,--export=apply_lambda");
         println!("cargo:rustc-link-arg=-Wl,--export=register_lambda");
         println!("cargo:rustc-link-arg=-Wl,--export=unregister_lambda");

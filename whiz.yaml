@@ -2,6 +2,9 @@ reactor:
   watch: "src/**/*"
   command: "./dev/build.sh"
 
+wasmedge:
+  command: "cargo run -p wasmedge"
+
 deno:
   watch: "deno/**/*.ts"
   command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/main.ts"
