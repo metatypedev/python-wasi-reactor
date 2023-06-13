@@ -1,7 +1,7 @@
 pub mod core;
 
 pub mod memory;
-pub mod export;
+pub mod bindings;
 
 #[cfg(test)]
 mod tests;

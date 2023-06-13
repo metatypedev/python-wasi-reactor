@@ -1,24 +1,26 @@
-reactor:
+reactor_guest:
   watch: "src/**/*"
   command: "./dev/build.sh"
 
-wasmedge:
+wasmedge_host:
   command: "cargo run -p wasmedge"
+  depends_on:
+    - reactor_guest
 
 deno:
   watch: "deno/**/*.ts"
   command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/main.ts"
   depends_on:
-    - reactor
+    - reactor_guest
 
 deno_def:
   watch: "deno/**/*.ts"
   command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/def.ts"
   depends_on:
-    - reactor
+    - reactor_guest
 
 deno_module:
   watch: "deno/**/*.ts"
   command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/module.ts"
   depends_on:
-    - reactor
+    - reactor_guest
