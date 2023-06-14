@@ -12,9 +12,12 @@ export async function getAssemblyInstance(customCallback?: HostCallback) {
     const context = new Context({
         env: {},
         args: [],
-        preopens: {},
+        preopens: {
+            // expose host folder to wasi
+            "/host_py": "./deno/host_py"
+        },
     });
-      
+
     const binary = await Deno.readFile(path);
     const module = new WebAssembly.Module(binary);
     // const module = await WebAssembly.compile(binary);

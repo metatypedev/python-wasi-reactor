@@ -48,6 +48,19 @@ def odd(x):
   return even(abs(x) - 1)
 `
   },
+  {
+    module: 'ext_folder_expose',
+    calls: [
+      { name: 'fn_that_calls_host', args: []},
+    ],
+    code: `
+def fn_that_calls_host():
+  import sys
+  sys.path.insert(0, '/host_py') # import lookup
+  import host # see preopens
+  return host.hello_host()
+`
+  },
 ]
 
 // register
