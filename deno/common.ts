@@ -10,11 +10,18 @@ export async function getAssemblyInstance(customCallback?: HostCallback) {
     const path = "./build/python-wasi-reactor.wasm";
 
     const context = new Context({
-        env: {},
+        env: {
+            // [!] considered before instance creation
+            // "PYTHONHOME": "/non_existing_guest_path"
+        },
         args: [],
         preopens: {
+            // [!] considered after instance creation
+            // next line does not override the existing /app in guest
+            // "/app": "./", // /app refers to PYTHONHOME (vfs packaging)
+
             // expose host folder to wasi
-            "/host_py": "./deno/host_py"
+            "/host_py": "./deno/host_py",
         },
     });
 

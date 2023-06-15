@@ -3,6 +3,7 @@ reactor_guest:
   command: "./dev/build.sh"
 
 wasmedge_host:
+  watch: "wasmedge/**/*.rs"
   command: "cargo run -p wasmedge"
   depends_on:
     - reactor_guest

@@ -40,7 +40,7 @@ fn main() -> anyhow::Result<()> {
         .build("host")?;
 
     // [!] module order matters
-    let vm = VmBuilder::new()
+    let mut vm = VmBuilder::new()
         .with_config(config)
         .build()?
         .register_import_module(imports)?
@@ -51,6 +51,21 @@ fn main() -> anyhow::Result<()> {
     //     WasmValue::from_i32(5678), // ptr
     // ];
     // vm.run_func(Some("host"), "callback", args)?;
+    println!("\n-----------------");
+
+    let wasi_module = vm.wasi_module_mut().unwrap();
+    let envs = vec![
+        // considered before instance creation
+        // can override paths
+        "PYTHONHOME=/non_existing_guest_folder"
+    ];
+    let preopens = vec![
+        // considered after instance creation => cannot override paths
+        // expose host folder to wasi
+        "/host_py:./deno/host_py",
+    ];
+    wasi_module.initialize(None, Some(envs), Some(preopens));
+
     vm.run_func(None, "init", params!())?;
 
     let mut bg = Bindgen::new(vm);
@@ -63,16 +78,16 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         })?;
 
-    let args = vec![
-        Param::String("say_hello"),
-        Param::String("lambda name: f\"Hello {name}\"")
-    ];
-    bg.run_wasm("register_lambda", args)
-        .and_then(|rv| {
-            let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
-            println!("Run bindgen -- register_lambda {:?}", ret);
-            Ok(())
-        })?;
+    // let args = vec![
+    //     Param::String("say_hello"),
+    //     Param::String("lambda name: f\"Hello {name}\"")
+    // ];
+    // bg.run_wasm("register_lambda", args)
+    //     .and_then(|rv| {
+    //         let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
+    //         println!("Run bindgen -- register_lambda {:?}", ret);
+    //         Ok(())
+    //     })?;
 
     // bindgen_exec(&mut bg, "register_lambda", vec![
     //     Param::String("say_hello"),

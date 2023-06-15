@@ -56,9 +56,16 @@ def odd(x):
     code: `
 def fn_that_calls_host():
   import sys
-  sys.path.insert(0, '/host_py') # import lookup
+  sys.path.insert(0, '/host_py') # import lookup, see commons
   import host # see preopens
-  return host.hello_host()
+  from nested_a.nested_b import fn_nested
+
+  return [
+    host.hello_host(),
+    fn_nested(),
+    f"version {sys.version}",
+    # sys.path
+  ]
 `
   },
 ]
