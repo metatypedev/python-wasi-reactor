@@ -9,7 +9,7 @@ function customCallback(id: number, ptr: number) {
 
 const { instance, memory } = await getAssemblyInstance(customCallback);
 const { 
-  init, 
+    init_python, 
   register_lambda,                 
 
   apply_lambda,    
@@ -21,7 +21,7 @@ const {
     string,
     CallableFunction
   >;
-init();
+init_python();
 
 Deno.test("wasm bindings", async (t) => {
     await t.step("lambda function", () => {

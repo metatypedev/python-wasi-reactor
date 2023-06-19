@@ -2,15 +2,14 @@ import { getAssemblyInstance } from "./common.ts";
 const { instance, memory } = await getAssemblyInstance();
 
 const { 
-  init, 
+  init_python, 
   register_def,
   apply_def,
-  unregister_def,
 } = instance.exports as Record<
   string,
   CallableFunction
 >;
-init();
+init_python();
 
 
 const tests = [

@@ -22,6 +22,7 @@ fn main() -> anyhow::Result<()> {
         .non_trap_conversions(true)
         .reference_types(true)
         .sign_extension_operators(true)
+        .threads(true)
         .simd(true);
     let host_options = HostRegistrationConfigOptions::default()
         .wasi(true);
@@ -52,21 +53,7 @@ fn main() -> anyhow::Result<()> {
     // ];
     // vm.run_func(Some("host"), "callback", args)?;
     println!("\n-----------------");
-
-    let wasi_module = vm.wasi_module_mut().unwrap();
-    let envs = vec![
-        // considered before instance creation
-        // can override paths
-        "PYTHONHOME=/non_existing_guest_folder"
-    ];
-    let preopens = vec![
-        // considered after instance creation => cannot override paths
-        // expose host folder to wasi
-        "/host_py:./deno/host_py",
-    ];
-    wasi_module.initialize(None, Some(envs), Some(preopens));
-
-    vm.run_func(None, "init", params!())?;
+    vm.run_func(None, "init_python", params!())?;
 
     let mut bg = Bindgen::new(vm);
 

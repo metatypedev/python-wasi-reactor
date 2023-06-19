@@ -4,14 +4,14 @@ const { instance, memory } = await getAssemblyInstance();
 // init, apply and register are all in main.rs
 // works similarly to bindgen
 const { 
-  init, 
+  init_python, 
   register_module,
   apply_def,
 } = instance.exports as Record<
   string,
   CallableFunction
 >;
-init();
+init_python();
 
 
 const tests = [
@@ -52,6 +52,10 @@ def odd(x):
     module: 'ext_folder_expose',
     calls: [
       { name: 'fn_that_calls_host', args: []},
+      { name: 'read_dirs', args: ["/app/**/*"]},
+      { name: 'read_dirs', args: ["/**/*"]},
+      { name: 'read_dirs', args: ["/usr/local/lib/*"]},
+      { name: 'list_dirs', args: ["/usr/local/lib"]},
     ],
     code: `
 def fn_that_calls_host():
@@ -66,6 +70,14 @@ def fn_that_calls_host():
     f"version {sys.version}",
     # sys.path
   ]
+
+import glob
+def read_dirs(s):
+  return glob.glob(s)
+
+import os
+def list_dirs(s):
+  return os.listdir(s)
 `
   },
 ]

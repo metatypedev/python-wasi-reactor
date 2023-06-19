@@ -1,11 +1,11 @@
 import { getAssemblyInstance } from "./common.ts";
 const { instance, memory } = await getAssemblyInstance();
 
-const { init, apply_lambda, register_lambda } = instance.exports as Record<
+const { init_python, apply_lambda, register_lambda } = instance.exports as Record<
   string,
   CallableFunction
 >;
-init();
+init_python();
 
 const op = memory.decode(
   register_lambda(...memory.encode("foo", "lambda x, y:  x['a'] + str(y)"))

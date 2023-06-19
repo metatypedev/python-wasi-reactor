@@ -1,7 +1,7 @@
 fn main() {
     #[cfg(feature = "wasm")]
     {
-        println!("cargo:rustc-link-arg=-Wl,--export=init");
+        println!("cargo:rustc-link-arg=-Wl,--export=init_python");
 
         println!("cargo:rustc-link-arg=-Wl,--export=identity");
         println!("cargo:rustc-link-arg=-Wl,--export=apply_lambda");
