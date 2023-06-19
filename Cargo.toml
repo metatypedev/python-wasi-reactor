@@ -9,10 +9,11 @@ opt-level = "z"
 lto = true
 
 [dependencies]
-pyo3 = { version = "0.18.1", features = ["abi3-py311"] }
-pythonize = "0.18.0"
+pythonize = "0.19.0"
 serde_json = "1.0.94"
 wasmedge-bindgen-macro = "0.4.1"
+pyo3 = { version = "0.19.0", features = ["abi3-py311"] }
+wlr-libpy = { git = "https://github.com/vmware-labs/webassembly-language-runtimes.git" }
 
 [workspace]
 members = [
@@ -21,3 +22,8 @@ members = [
 
 [features]
 wasm = []
+
+[build-dependencies]
+wlr-libpy = { git = "https://github.com/vmware-labs/webassembly-language-runtimes.git", features = [
+    "build",
+] }

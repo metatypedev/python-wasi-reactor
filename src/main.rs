@@ -20,8 +20,8 @@ pub extern "C" fn init_python() {
     println!("[guest] Python init");
     // fix: python cannot be found on wasmedge
     // std::env::set_var("PYTHONHOME", "/usr/local");
-    std::env::set_var("PYTHONPATH", "/app");
-    std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
+    // std::env::set_var("PYTHONPATH", "/app");
+    // std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
     pyo3::append_to_inittab!(reactor);
     pyo3::prepare_freethreaded_python();
 
