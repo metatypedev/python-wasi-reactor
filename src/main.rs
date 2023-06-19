@@ -10,9 +10,10 @@ use pyo3::prelude::*;
 #[cfg(feature = "wasm")]
 use python_wasi_reactor::bindings::*;
 
-#[cfg(feature = "wasm")]
+// #[cfg(feature = "wasm")]
 use python_wasi_reactor::core::rustpy::*;
 
+use wlr_libpy::py_main::py_main;
 
 #[cfg(feature = "wasm")]
 #[no_mangle]
@@ -24,16 +25,19 @@ pub extern "C" fn init_python() {
     // std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
     pyo3::append_to_inittab!(reactor);
     pyo3::prepare_freethreaded_python();
-
-    Python::with_gil(|py| {
-        let _module = py.import("plugin")?;
-        Ok::<(), PyErr>(())
-    })
-    .unwrap();
+    py_main(std::env::args().collect());
+    // Python::with_gil(|py| {
+    //     let _module = py.import("plugin")?;
+    //     Ok::<(), PyErr>(())
+    // })
+    // .unwrap();
 }
 
 #[cfg(not(feature = "wasm"))]
 #[allow(unused_imports)]
 fn main() {
+    pyo3::append_to_inittab!(reactor);
+    pyo3::prepare_freethreaded_python();
+    py_main(std::env::args().collect());
     println!("native");
 }
