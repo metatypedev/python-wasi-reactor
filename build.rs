@@ -1,27 +1,33 @@
+use std::path::Path;
+
+use wlr_assets::bld_cfg::LibsConfig;
+use wlr_assets::download_asset;
+
+const WASI_DEPS_PATH: &str = "target/wasm32-wasi/wasi-deps";
+
+const WASI_SDK_SYSROOT_URL: &str = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-19/wasi-sysroot-19.0.tar.gz";
+const WASI_SDK_CLANG_BUILTINS_URL: &str = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-19/libclang_rt.builtins-wasm32-wasi-19.0.tar.gz";
+
 fn main() {
-    use wlr_libpy::bld_cfg::configure_static_libs;
-    configure_static_libs().unwrap().emit_link_flags();
-    #[cfg(feature = "wasm")]
-    {
-        println!("cargo:rustc-link-arg=-Wl,--export=init_python");
+    let mut libs_config = LibsConfig::new();
 
-        println!("cargo:rustc-link-arg=-Wl,--export=identity");
-        println!("cargo:rustc-link-arg=-Wl,--export=apply_lambda");
-        println!("cargo:rustc-link-arg=-Wl,--export=register_lambda");
-        println!("cargo:rustc-link-arg=-Wl,--export=unregister_lambda");
+    let wasi_deps_path = Path::new(WASI_DEPS_PATH);
 
-        println!("cargo:rustc-link-arg=-Wl,--export=apply_def");
-        println!("cargo:rustc-link-arg=-Wl,--export=register_def");
-        println!("cargo:rustc-link-arg=-Wl,--export=unregister_def");
+    download_asset(WASI_SDK_SYSROOT_URL, wasi_deps_path).unwrap();
+    libs_config.add_lib_path(format!("{WASI_DEPS_PATH}/wasi-sysroot/lib/wasm32-wasi"));
+    libs_config.add("wasi-emulated-signal");
+    libs_config.add("wasi-emulated-getpid");
+    libs_config.add("wasi-emulated-process-clocks");
 
-        println!("cargo:rustc-link-arg=-Wl,--export=register_module");
-        println!("cargo:rustc-link-arg=-Wl,--export=unregister_module");
+    download_asset(WASI_SDK_CLANG_BUILTINS_URL, wasi_deps_path).unwrap();
+    libs_config.add_lib_path(format!("{WASI_DEPS_PATH}/lib/wasi"));
+    libs_config.add("clang_rt.builtins-wasm32");
 
-        println!("cargo:rustc-link-arg=-Wl,--export=allocate");
-        println!("cargo:rustc-link-arg=-Wl,--export=deallocate");
+    libs_config.add_lib_path(format!("vendor/libpython/lib/wasm32-wasi"));
+    libs_config.add("python3.11");
 
-        // https://github.com/vmware-labs/webassembly-language-runtimes/issues/79
-        println!("cargo:rustc-link-arg=-Wl,-z,stack-size=524288");
-        println!("cargo:rustc-link-arg=-mexec-model=reactor");
-    }        
+    //libs_config.add_lib_path("vendor/wasi-vfs/lib".to_string());
+    //libs_config.add("wasi_vfs");
+
+    libs_config.emit_link_flags();
 }

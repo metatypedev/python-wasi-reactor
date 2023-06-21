@@ -1,9 +1,10 @@
 use wasmedge_sdk::{
-    error::HostFuncError, host_function, params, Caller, ImportObjectBuilder, Module,
-    VmBuilder, WasmValue, config::{HostRegistrationConfigOptions, ConfigBuilder, CommonConfigOptions},
+    config::{CommonConfigOptions, ConfigBuilder, HostRegistrationConfigOptions},
+    error::HostFuncError,
+    host_function, params, Caller, ImportObjectBuilder, Module, VmBuilder, WasmValue,
 };
 use wasmedge_sdk_bindgen::{Bindgen, Param};
- 
+
 #[host_function]
 pub fn callback(_caller: Caller, _args: Vec<WasmValue>) -> Result<Vec<WasmValue>, HostFuncError> {
     println!("[host] callback");
@@ -15,26 +16,16 @@ pub fn callback(_caller: Caller, _args: Vec<WasmValue>) -> Result<Vec<WasmValue>
 
 fn main() -> anyhow::Result<()> {
     // start config
-    let common_options = CommonConfigOptions::default()
-        .bulk_memory_operations(true)
-        .multi_value(true)
-        .mutable_globals(true)
-        .non_trap_conversions(true)
-        .reference_types(true)
-        .sign_extension_operators(true)
-        .threads(true)
-        .simd(true);
-    let host_options = HostRegistrationConfigOptions::default()
-        .wasi(true);
+    let common_options = CommonConfigOptions::default().threads(true);
+    let host_options = HostRegistrationConfigOptions::default().wasi(true);
     let config = ConfigBuilder::new(common_options)
         .with_host_registration_config(host_options)
-        .build()
-        .unwrap();
+        .build()?;
     // end config
-    
+
     // load wasm module
     let module = Module::from_file(None, "build/python-wasi-reactor.wasm")?;
- 
+
     // create an import module
     let imports = ImportObjectBuilder::new()
         .with_func::<(i32, i32), ()>("callback", callback)?
@@ -47,12 +38,25 @@ fn main() -> anyhow::Result<()> {
         .register_import_module(imports)?
         .register_module(None, module)?;
 
+    let wasi_module = vm.wasi_module_mut().unwrap();
+    let preopens = vec![
+        "/app:./src/python:readonly",
+        "/usr/local/lib:./vendor/libpython/usr/local/lib:readonly",
+    ];
+
+    wasi_module.initialize(None, None, Some(preopens));
+    println!("wasi_module: {:?}", wasi_module.exit_code());
+
+    // if wasi-vfs is not used, initialize the reactor as not done automatically
+    let init = vm.run_func(None, "_initialize", params!())?;
+    println!("init: {:?}", init);
+
+    println!("\n-----------------");
     // let args = vec![
     //     WasmValue::from_i32(1234), // id
     //     WasmValue::from_i32(5678), // ptr
     // ];
     // vm.run_func(Some("host"), "callback", args)?;
-    println!("\n-----------------");
     vm.run_func(None, "init_python", params!())?;
 
     let mut bg = Bindgen::new(vm);

@@ -13,19 +13,28 @@ use python_wasi_reactor::bindings::*;
 // #[cfg(feature = "wasm")]
 use python_wasi_reactor::core::rustpy::*;
 
-use wlr_libpy::py_main::py_main;
-
 #[cfg(feature = "wasm")]
 #[no_mangle]
 pub extern "C" fn init_python() {
     println!("[guest] Python init");
+    // fs is like s3, only keys, this means
+    // ls / → error
+    // ls /usr/local/lib → key found, ls
+    // however, as read-only, it cannot be listed
+    //std::fs::write("hello.txt", "Hi").expect("Unable to write file");
+    /*println!("/: {:?}", std::fs::read_dir("/"));
+    println!(
+        "/usr/local/lib: {:?}",
+        std::fs::read_dir("/usr/local/lib/python3.11")
+            .unwrap()
+            .collect::<Vec<_>>()
+    );*/
     // fix: python cannot be found on wasmedge
-    // std::env::set_var("PYTHONHOME", "/usr/local");
-    // std::env::set_var("PYTHONPATH", "/app");
-    // std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
+    std::env::set_var("PYTHONHOME", "/usr/local");
+    std::env::set_var("PYTHONPATH", "/app");
+    std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
     pyo3::append_to_inittab!(reactor);
     pyo3::prepare_freethreaded_python();
-    py_main(std::env::args().collect());
     // Python::with_gil(|py| {
     //     let _module = py.import("plugin")?;
     //     Ok::<(), PyErr>(())
@@ -38,6 +47,6 @@ pub extern "C" fn init_python() {
 fn main() {
     pyo3::append_to_inittab!(reactor);
     pyo3::prepare_freethreaded_python();
-    py_main(std::env::args().collect());
+    //py_main(std::env::args().collect());
     println!("native");
 }
