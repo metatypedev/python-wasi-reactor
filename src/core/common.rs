@@ -1,5 +1,12 @@
 use pyo3::prelude::*;
 use pyo3::types::PyTuple;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+pub struct RetValue {
+    pub value: String,
+    pub error: bool,
+}
 
 pub fn collect_args_from_json(args_str: &str) -> Result<Vec<serde_json::Value>, String> {
     let args = serde_json::from_str::<serde_json::Value>(&args_str)

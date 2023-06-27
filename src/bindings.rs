@@ -9,79 +9,72 @@ pub mod host {
     }
 }
 
-#[wasmedge_bindgen]
-pub fn identity(value: String) -> Result<String, String> {
-    Ok(value)
-}
-
-#[wasmedge_bindgen]
-pub fn register_lambda(name: String, code: String) -> Result<String, String> {
-    lambda::register(name, code)
-}
-
-#[wasmedge_bindgen]
-pub fn unregister_lambda(name: String) -> Result<String, String> {
-    lambda::unregister(name)
-}
-
-#[wasmedge_bindgen]
-pub fn apply_lambda(id: i32, name: String, args: String) -> u8 {
-    let run = lambda::apply(name, args);
-    match run {
+/// Set id to -1 if != apply
+pub fn return_and_host_output(id: i32, out: Result<String, String>) -> String {
+    let ret = match out {
         Ok(res) => {
-            let ptr = host_result(true, res);
-            unsafe {
-                host::callback(id, ptr);
-            };
-            0
+            if id > 0 {
+                let ptr = host_result(true, res.to_owned());
+                unsafe {
+                    host::callback(id, ptr);
+                };
+            }
+            common::RetValue { value: res, error: false }
         }
         Err(e) => {
-            let ptr = host_result(false, e);
-            unsafe {
-                host::callback(id, ptr);
-            };
-            1
+            if id > 0 {
+                let ptr = host_result(false, e.to_owned());
+                unsafe {
+                    host::callback(id, ptr);
+                };
+            }
+            common::RetValue { value: e, error: true }
         }
-    }
+    };
+    serde_json::to_string(&ret).unwrap()
 }
 
 #[wasmedge_bindgen]
-pub fn register_def(name: String, code: String) -> Result<String, String> {
-    defun::register(name, code)
+pub fn identity(value: String) -> String {
+    return_and_host_output(-1, Ok(value))
 }
 
 #[wasmedge_bindgen]
-pub fn unregister_def(name: String) -> Result<String, String> {
-    defun::unregister(name)
+pub fn register_lambda(name: String, code: String) -> String {
+    return_and_host_output(-1, lambda::register(name, code))
 }
 
 #[wasmedge_bindgen]
-pub fn apply_def(id: i32, name: String, args: String) -> u8 {
-    let run = defun::apply(name, args);
-    match run {
-        Ok(res) => {
-            let ptr = host_result(true, res);
-            unsafe {
-                host::callback(id, ptr);
-            };
-            0
-        }
-        Err(e) => {
-            let ptr = host_result(false, e);
-            unsafe {
-                host::callback(id, ptr);
-            };
-            1
-        }
-    }
+pub fn unregister_lambda(name: String) -> String {
+    return_and_host_output(-1, lambda::unregister(name))
 }
 
 #[wasmedge_bindgen]
-pub fn register_module(name: String, code: String) -> Result<String, String> {
-    module::register(name, code)
+pub fn apply_lambda(id: i32, name: String, args: String) -> String {
+    return_and_host_output(id, lambda::apply(name, args))
 }
 
 #[wasmedge_bindgen]
-pub fn unregister_module(name: String) -> Result<String, String> {
-    module::unregister(name)
+pub fn register_def(name: String, code: String) -> String {
+    return_and_host_output(-1, defun::register(name, code))
+}
+
+#[wasmedge_bindgen]
+pub fn unregister_def(name: String) -> String {
+    return_and_host_output(-1, defun::unregister(name))
+}
+
+#[wasmedge_bindgen]
+pub fn apply_def(id: i32, name: String, args: String) -> String {
+    return_and_host_output(id, defun::apply(name, args))
+}
+
+#[wasmedge_bindgen]
+pub fn register_module(name: String, code: String) -> String {
+    return_and_host_output(-1, module::register(name, code))
+}
+
+#[wasmedge_bindgen]
+pub fn unregister_module(name: String) -> String {
+    return_and_host_output(-1, module::unregister(name))
 }

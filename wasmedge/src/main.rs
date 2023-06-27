@@ -8,9 +8,10 @@ use wasmedge_sdk_bindgen::{Bindgen, Param};
 #[host_function]
 pub fn callback(_caller: Caller, _args: Vec<WasmValue>) -> Result<Vec<WasmValue>, HostFuncError> {
     println!("[host] callback");
-    for arg in _args {
-        println!(" arg: {:?}", arg);
+    if _args.len() != 2 {
+        panic!("{} != 2 (required)", _args.len());
     }
+
     Ok(vec![])
 }
 
@@ -69,25 +70,28 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         })?;
 
-    // let args = vec![
-    //     Param::String("say_hello"),
-    //     Param::String("lambda name: f\"Hello {name}\"")
-    // ];
-    // bg.run_wasm("register_lambda", args)
-    //     .and_then(|rv| {
-    //         let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
-    //         println!("Run bindgen -- register_lambda {:?}", ret);
-    //         Ok(())
-    //     })?;
+    let args = vec![
+        Param::String("say_hello"),
+        Param::String("lambda name: f\"Hello {name}\"")
+    ];
+    bg.run_wasm("register_lambda", args)
+        .and_then(|rv| {
+            let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
+            println!("Run bindgen -- register_lambda {:?}", ret);
+            Ok(())
+        })?;
 
-    // bindgen_exec(&mut bg, "register_lambda", vec![
-    //     Param::String("say_hello"),
-    //     Param::String("lambda name: f\"Hello {name}\"")
-    // ]);
 
-    // bindgen_exec(&mut bg, "apply_lambda", vec![
-    //     Param::String("say_hello"),
-    //     Param::String("[\"Jake!\"]") // json array
-    // ]);
+    let args = vec![
+        Param::String("1"),
+        Param::String("say_hello"),
+        Param::String("[\"Jake\"]")
+    ];
+    bg.run_wasm("apply_lambda", args)
+        .and_then(|rv| {
+            let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
+            println!("Run bindgen -- apply_lambda {}", ret);
+            Ok(())
+        })?;
     Ok(())
 }
