@@ -1,3 +1,0 @@
-import reactor # noqa
-
-lambdas = {}

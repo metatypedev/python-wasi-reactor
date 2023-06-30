@@ -34,6 +34,7 @@ pub extern "C" fn init_python() {
     std::env::set_var("PYTHONPATH", "/app");
     std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
     pyo3::append_to_inittab!(reactor);
+    pyo3::append_to_inittab!(plugin);
     pyo3::prepare_freethreaded_python();
     // Python::with_gil(|py| {
     //     let _module = py.import("plugin")?;
@@ -46,6 +47,7 @@ pub extern "C" fn init_python() {
 #[allow(unused_imports)]
 fn main() {
     pyo3::append_to_inittab!(reactor);
+    pyo3::append_to_inittab!(plugin);
     pyo3::prepare_freethreaded_python();
     //py_main(std::env::args().collect());
     println!("native");

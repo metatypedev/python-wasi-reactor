@@ -1,4 +1,4 @@
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict};
 
 #[pyfunction]
 pub fn reverse(str: String) -> PyResult<String> {
@@ -9,5 +9,11 @@ pub fn reverse(str: String) -> PyResult<String> {
 #[pymodule]
 pub fn reactor(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(reverse, m)?)?;
+    Ok(())
+}
+
+#[pymodule]
+pub fn plugin(py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add("lambdas", PyDict::new(py))?;
     Ok(())
 }

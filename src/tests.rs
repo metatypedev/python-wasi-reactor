@@ -26,6 +26,7 @@ pub fn init() {
     std::env::set_var("PYTHONPATH", "./src/python");
     std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
     pyo3::append_to_inittab!(reactor);
+    pyo3::append_to_inittab!(plugin);
     pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {
