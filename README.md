@@ -96,3 +96,8 @@ Install [Whiz](https://github.com/zifeo/whiz) or manually run.
 # wasmedge (host)
 cargo run -p wasmedge
 ```
+
+Install Deno bindgen
+```
+deno install -Afrq -n deno_bindgen https://deno.land/x/deno_bindgen/cli.ts
+```

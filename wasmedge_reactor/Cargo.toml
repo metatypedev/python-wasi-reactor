@@ -1,10 +1,16 @@
 [package]
-name = "wasmedge"
+name = "wasmedge_reactor"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+name = "wasmedge_reactor"
+crate-type = ["cdylib"]
 
 [dependencies]
 wasmedge-sdk = "0.8.1"
 wasmedge-sys = "0.13.1"
 anyhow = "1.0.71"
 wasmedge-sdk-bindgen = { path = "./dep" }
+deno_bindgen = "0.8.1"
+serde = { version = "1.0.164", features = ["derive"] }

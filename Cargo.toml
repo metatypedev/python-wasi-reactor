@@ -17,7 +17,7 @@ pyo3 = { version = "0.19.0", features = ["abi3-py311"] }
 
 [workspace]
 members = [
-    "wasmedge"
+    "wasmedge_reactor"
 ]
 
 [features]

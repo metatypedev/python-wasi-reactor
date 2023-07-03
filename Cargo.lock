@@ -3,10 +3,29 @@
 version = 3
 
 [[package]]
+name = "Inflector"
+version = "0.11.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
+dependencies = [
+ "lazy_static",
+ "regex",
+]
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
+
+[[package]]
+name = "aho-corasick"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43f6cb1bf222025340178f382c426f13757b2960e89779dfcb319c32542a5a41"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "anyhow"
@@ -128,6 +147,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b540bd8bc810d3885c6ea91e2018302f68baba2129ab3e88f32389ee9370880d"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "deno_bindgen"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b7bd470e900d698b2a500b7ee5375a47a33e22f2332df3750a2f3e39b8297f2"
+dependencies = [
+ "deno_bindgen_macro",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "deno_bindgen_macro"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6b684807ba0d2c9d09e1769811d5b0552032f82edf27b3b77baf0840ad6d520"
+dependencies = [
+ "Inflector",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -912,6 +956,8 @@ version = "1.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0ab3ca65655bb1e41f2a8c8cd662eb4fb035e67c3f78da1d61dffe89d07300f"
 dependencies = [
+ "aho-corasick",
+ "memchr",
  "regex-syntax",
 ]
 
@@ -1397,16 +1443,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmedge"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "wasmedge-sdk",
- "wasmedge-sdk-bindgen",
- "wasmedge-sys",
-]
-
-[[package]]
 name = "wasmedge-bindgen-macro"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1481,6 +1517,18 @@ checksum = "aab1f57fd27746277379ab012475fa77679f91cc3bec1fa7b09b1628c5fb0339"
 dependencies = [
  "thiserror",
  "wat",
+]
+
+[[package]]
+name = "wasmedge_reactor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "deno_bindgen",
+ "serde",
+ "wasmedge-sdk",
+ "wasmedge-sdk-bindgen",
+ "wasmedge-sys",
 ]
 
 [[package]]

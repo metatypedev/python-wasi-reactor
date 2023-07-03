@@ -4,24 +4,11 @@ reactor_guest:
 
 wasmedge_host:
   watch: "wasmedge/**/*.rs"
-  command: "cargo run -p wasmedge"
+  command: "cargo run -p wasmedge_reactor"
   depends_on:
     - reactor_guest
 
-deno:
-  watch: "deno/**/*.ts"
-  command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/main.ts"
+bindgen:
+  command: deno_bindgen -- -p wasmedge_reactor -F deno
   depends_on:
-    - reactor_guest
-
-deno_def:
-  watch: "deno/**/*.ts"
-  command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/def.ts"
-  depends_on:
-    - reactor_guest
-
-deno_module:
-  watch: "deno/**/*.ts"
-  command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/module.ts"
-  depends_on:
-    - reactor_guest
+    - wasmedge_host
