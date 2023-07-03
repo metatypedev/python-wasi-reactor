@@ -9,6 +9,8 @@ wasmedge_host:
     - reactor_guest
 
 bindgen:
-  command: deno_bindgen -- -p wasmedge_reactor -F deno
+  command: |
+    rm -rfv $(deno info --json | jq -r .denoDir)/plug/file wasmedge_reactor/bindings.json
+    deno_bindgen -- -p wasmedge_reactor
   depends_on:
     - wasmedge_host
