@@ -10,13 +10,12 @@ use pyo3::prelude::*;
 #[cfg(feature = "wasm")]
 use python_wasi_reactor::bindings::*;
 
-// #[cfg(feature = "wasm")]
 use python_wasi_reactor::core::rustpy::*;
 
 #[cfg(feature = "wasm")]
 #[no_mangle]
 pub extern "C" fn init_python() {
-    println!("[guest] Python init");
+    // println!("[guest] Python init");
     // fs is like s3, only keys, this means
     // ls / → error
     // ls /usr/local/lib → key found, ls

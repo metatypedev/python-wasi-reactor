@@ -1,19 +1,71 @@
 mod wasi_vm;
 
-use std::{path::PathBuf, sync::Arc};
+use std::path::PathBuf;
 
+use dashmap::{DashMap, mapref::one::Ref};
 use deno_bindgen::deno_bindgen;
-use wasmedge_sdk::Vm;
+use wasmedge_sdk::{Vm, params};
 use wasmedge_sdk_bindgen::{Bindgen, Param};
-use once_cell::sync::OnceCell;
-use arc_swap::{ArcSwap, Guard};
+use once_cell::sync::Lazy;
 
-static GLOBAL_VM: OnceCell<ArcSwap<Vm>> = OnceCell::new();
+static VIRTUAL_MACHINES: Lazy<DashMap<String, Vm>> = Lazy::new(DashMap::new);
+
+fn get_virtual_machine(name: String) -> Result<Ref<'static, String, Vm>, String> {
+    match VIRTUAL_MACHINES.get(&name) {
+        Some(vm) => Ok(vm),
+        None => Err("vm not initialized".to_string()),
+    }
+}
 
 #[deno_bindgen]
-struct WasiReactorInp {
-    callee: String,
-    args: Vec<String>
+struct WasiVmInitConfig {
+    vm_name: String,
+    pylib_path: String,
+    wasi_mod_path: String,
+    preopens: Vec<String>
+}
+
+#[deno_bindgen]
+enum WasiVmSetupOut {
+    Ok,
+    Err { message: String }
+}
+
+#[deno_bindgen]
+fn register_virtual_machine(config: WasiVmInitConfig) -> WasiVmSetupOut {
+    if VIRTUAL_MACHINES.get(&config.vm_name).is_none() {
+        let ret = wasi_vm::init_reactor_vm(
+            config.preopens, 
+            PathBuf::from(config.pylib_path), 
+            PathBuf::from(config.wasi_mod_path)
+        );
+        if let Err(e) = ret {
+            return WasiVmSetupOut::Err { message: e.to_string() };
+        }
+
+        let vm = ret.unwrap();
+        if let Err(e) = &vm.run_func(None, "init_python", params!()) {
+            return WasiVmSetupOut::Err { message: e.to_string() };
+        }
+
+        VIRTUAL_MACHINES.insert(config.vm_name, vm);
+    }
+    WasiVmSetupOut::Ok
+}
+
+#[deno_bindgen]
+struct WasiVmUnregisterInp {
+    vm_name: String,
+}
+
+#[deno_bindgen]
+fn unregister_virtual_machine(input: WasiVmUnregisterInp) -> WasiVmSetupOut {
+    match VIRTUAL_MACHINES.remove(&input.vm_name) {
+        Some(_) => WasiVmSetupOut::Ok,
+        None => WasiVmSetupOut::Err { 
+            message: format!("Could not remove virtual machine {:?}: entry not found", input.vm_name) 
+        }
+    }
 }
 
 #[deno_bindgen]
@@ -23,61 +75,125 @@ enum WasiReactorOut {
 }
 
 #[deno_bindgen]
-struct WasiReactorConfig {
-    pylib_path: String,
-    wasi_mod_path: String,
-    preopens: Vec<String>,
-    reset_vm: bool
-}
-
-fn get_global_vm(config: WasiReactorConfig) -> Result<Guard<'static, Arc<Vm>>, String> {
-    if GLOBAL_VM.get().is_none() || config.reset_vm {
-        let ret = wasi_vm::init_reactor_vm(
-            config.preopens, 
-            PathBuf::from(config.pylib_path), 
-            PathBuf::from(config.wasi_mod_path)
-        );
-        if let Err(e) = ret {
-            return Err(e.to_string());
-        }
-        if GLOBAL_VM.get().is_some() {
-            GLOBAL_VM
-                .get()
-                .unwrap()
-                .store(Arc::new(ret.unwrap()));
-        } else {
-            GLOBAL_VM
-                .set(ArcSwap::from_pointee(ret.unwrap()))
-                .unwrap();
-        }
-    }
-    Ok(GLOBAL_VM.get().unwrap().load())
+struct PythonRegisterInp {
+    vm: String,
+    name: String,
+    code: String
 }
 
 #[deno_bindgen]
+struct PythonUnregisterInp {
+    vm: String,
+    name: String
+}
+
+#[deno_bindgen]
+struct PythonApplyInp {
+    vm: String,
+    id: i32,
+    name: String,
+    args: String // json array
+}
+
 fn run_wasi_func(
-    input: WasiReactorInp, 
-    config: WasiReactorConfig
+    vm: &Vm,
+    fn_name: String,
+    args: Vec<Param>
 ) -> WasiReactorOut {
-
-    let vm = get_global_vm(config);
-    if let Err(e) = vm {
-        return WasiReactorOut::Err { message: e.to_string() };
-    }
-
-    let vm = vm.as_deref().unwrap().as_ref();
     let mut bg = Bindgen::new(vm.to_owned());
-
-    let args = input
-        .args
-        .iter()
-        .map(|v| Param::String(v))
-        .collect();
-    match bg.run_wasm(input.callee, args) {
+    match bg.run_wasm(fn_name, args) {
         Ok(ret) => {
             let ret = ret.unwrap().pop().unwrap().downcast::<String>().unwrap();
             WasiReactorOut::Ok { res: ret.as_ref().to_owned() }
         },
         Err(e) => WasiReactorOut::Err { message: e.to_string() }
     }
+}
+
+fn register_entity(wasi_callee: String, entity: PythonRegisterInp) -> WasiReactorOut {
+    let vm = get_virtual_machine(entity.vm);
+    if let Err(e) = vm {
+        return WasiReactorOut::Err { message: e.to_string() };
+    }
+    let vm = vm.unwrap();
+    let args = vec![
+        Param::String(&entity.name),
+        Param::String(&entity.code)
+    ];
+    run_wasi_func(&vm, wasi_callee, args)
+}
+
+fn unregister_entity(wasi_callee: String, entity: PythonUnregisterInp) -> WasiReactorOut {
+    let vm = get_virtual_machine(entity.vm);
+    if let Err(e) = vm {
+        return WasiReactorOut::Err { message: e.to_string() };
+    }
+    let vm = vm.unwrap();
+    let args = vec![
+        Param::String(&entity.name),
+    ];
+    run_wasi_func(&vm, wasi_callee, args)
+}
+
+fn apply_entity(wasi_callee: String, entity: PythonApplyInp) -> WasiReactorOut {
+    let vm = get_virtual_machine(entity.vm);
+    if let Err(e) = vm {
+        return WasiReactorOut::Err { message: e.to_string() };
+    }
+    let vm = vm.unwrap();
+    let args = vec![
+        Param::I32(entity.id),
+        Param::String(&entity.name),
+        Param::String(&entity.args)
+    ];
+    run_wasi_func(&vm, wasi_callee, args)
+}
+
+// deno bindings
+
+// lambda
+
+#[deno_bindgen]
+pub fn register_lambda(entity: PythonRegisterInp) -> WasiReactorOut {
+    register_entity("register_lambda".to_string(), entity)
+}
+
+#[deno_bindgen]
+pub fn unregister_lambda(entity: PythonUnregisterInp) -> WasiReactorOut {
+    unregister_entity("unregister_lambda".to_string(), entity)
+}
+
+#[deno_bindgen]
+pub fn apply_lambda(entity: PythonApplyInp) -> WasiReactorOut {
+    apply_entity("apply_lambda".to_string(), entity)
+}
+
+// defun
+
+#[deno_bindgen]
+pub fn register_def(entity: PythonRegisterInp) -> WasiReactorOut {
+    register_entity("register_def".to_string(), entity)
+}
+
+#[deno_bindgen]
+pub fn unregister_def(entity: PythonUnregisterInp) -> WasiReactorOut {
+    unregister_entity("unregister_def".to_string(), entity)
+}
+
+#[deno_bindgen]
+pub fn apply_def(entity: PythonApplyInp) -> WasiReactorOut {
+    apply_entity("apply_def".to_string(), entity)
+}
+
+
+// module
+
+#[deno_bindgen]
+pub fn register_module(entity: PythonRegisterInp) -> WasiReactorOut {
+    register_entity("register_module".to_owned(), entity)
+}
+
+#[deno_bindgen]
+pub fn unregister_module(entity: PythonUnregisterInp) -> WasiReactorOut {
+    unregister_entity("unregister_module".to_owned(), entity)
 }
