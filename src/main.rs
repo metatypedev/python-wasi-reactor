@@ -28,18 +28,13 @@ pub extern "C" fn init_python() {
             .unwrap()
             .collect::<Vec<_>>()
     );*/
-    // fix: python cannot be found on wasmedge
+
     std::env::set_var("PYTHONHOME", "/usr/local");
     std::env::set_var("PYTHONPATH", "/app");
     std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
     pyo3::append_to_inittab!(reactor);
     pyo3::append_to_inittab!(plugin);
     pyo3::prepare_freethreaded_python();
-    // Python::with_gil(|py| {
-    //     let _module = py.import("plugin")?;
-    //     Ok::<(), PyErr>(())
-    // })
-    // .unwrap();
 }
 
 #[cfg(not(feature = "wasm"))]

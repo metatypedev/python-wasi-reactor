@@ -23,7 +23,7 @@ struct PyModuleSample {
 
 
 pub fn init() {
-    std::env::set_var("PYTHONPATH", "./src/python");
+    std::env::set_var("PYTHONPATH", "./deno/python_scripts");
     std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
     pyo3::append_to_inittab!(reactor);
     pyo3::append_to_inittab!(plugin);
@@ -52,7 +52,6 @@ fn lambda_function() {
     assert!(app.is_ok());
     assert_eq!(app.unwrap(), "\"hello Jake123\"");
 
-    
     let unreg = lambda::unregister(callee.to_string());
     assert!(unreg.is_ok());
 }
