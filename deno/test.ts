@@ -92,7 +92,7 @@ from defun import concat_two  # preopens
 
 def go():
   return concat_two(
-    say_hello_a("Jake") + "\n",
+    say_hello_a("Jake") + "\\n",
     say_hello_b("John")
   )
 `,
