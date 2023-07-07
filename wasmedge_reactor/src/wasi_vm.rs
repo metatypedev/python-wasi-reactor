@@ -8,10 +8,7 @@ use wasmedge_sdk::{
 
 #[host_function]
 pub fn callback(_caller: Caller, _args: Vec<WasmValue>) -> Result<Vec<WasmValue>, HostFuncError> {
-    println!("[host] callback");
-    if _args.len() != 2 {
-        panic!("{} != 2 (required)", _args.len());
-    }
+    // println!("[host] callback");
     Ok(vec![])
 }
 

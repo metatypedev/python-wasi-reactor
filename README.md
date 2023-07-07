@@ -36,9 +36,6 @@ The runtime exports the following WASM exports:
 - `register_module(name: String, code: String)`: register Python code as a module with a name
 - `unregister_module(name: String)`: unregister given module
 
-- `allocate`: Wasmedge-bindgen memory allocation
-- `deallocate`: Wasmedge-bindgen memory deallocation
-
 It will also require the following imports:
 
 - `callback(id: i32, value: i32)`: async return of apply with id and pointer to
@@ -100,4 +97,9 @@ cargo run -p wasmedge
 Install Deno bindgen
 ```
 deno install -Afrq -n deno_bindgen https://deno.land/x/deno_bindgen/cli.ts
+```
+
+Testing
+```
+deno test -A --unstable deno/test.ts
 ```

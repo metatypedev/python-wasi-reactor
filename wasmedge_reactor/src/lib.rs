@@ -110,7 +110,7 @@ fn run_wasi_func(
     }
 }
 
-fn register_entity(wasi_callee: String, entity: PythonRegisterInp) -> WasiReactorOut {
+fn register_entity(wasi_fn_callee: String, entity: PythonRegisterInp) -> WasiReactorOut {
     let vm = get_virtual_machine(entity.vm);
     if let Err(e) = vm {
         return WasiReactorOut::Err { message: e.to_string() };
@@ -120,10 +120,10 @@ fn register_entity(wasi_callee: String, entity: PythonRegisterInp) -> WasiReacto
         Param::String(&entity.name),
         Param::String(&entity.code)
     ];
-    run_wasi_func(&vm, wasi_callee, args)
+    run_wasi_func(&vm, wasi_fn_callee, args)
 }
 
-fn unregister_entity(wasi_callee: String, entity: PythonUnregisterInp) -> WasiReactorOut {
+fn unregister_entity(wasi_fn_callee: String, entity: PythonUnregisterInp) -> WasiReactorOut {
     let vm = get_virtual_machine(entity.vm);
     if let Err(e) = vm {
         return WasiReactorOut::Err { message: e.to_string() };
@@ -132,10 +132,10 @@ fn unregister_entity(wasi_callee: String, entity: PythonUnregisterInp) -> WasiRe
     let args = vec![
         Param::String(&entity.name),
     ];
-    run_wasi_func(&vm, wasi_callee, args)
+    run_wasi_func(&vm, wasi_fn_callee, args)
 }
 
-fn apply_entity(wasi_callee: String, entity: PythonApplyInp) -> WasiReactorOut {
+fn apply_entity(wasi_fn_callee: String, entity: PythonApplyInp) -> WasiReactorOut {
     let vm = get_virtual_machine(entity.vm);
     if let Err(e) = vm {
         return WasiReactorOut::Err { message: e.to_string() };
@@ -146,7 +146,7 @@ fn apply_entity(wasi_callee: String, entity: PythonApplyInp) -> WasiReactorOut {
         Param::String(&entity.name),
         Param::String(&entity.args)
     ];
-    run_wasi_func(&vm, wasi_callee, args)
+    run_wasi_func(&vm, wasi_fn_callee, args)
 }
 
 // deno bindings
@@ -190,10 +190,10 @@ pub fn apply_def(entity: PythonApplyInp) -> WasiReactorOut {
 
 #[deno_bindgen]
 pub fn register_module(entity: PythonRegisterInp) -> WasiReactorOut {
-    register_entity("register_module".to_owned(), entity)
+    register_entity("register_module".to_string(), entity)
 }
 
 #[deno_bindgen]
 pub fn unregister_module(entity: PythonUnregisterInp) -> WasiReactorOut {
-    unregister_entity("unregister_module".to_owned(), entity)
+    unregister_entity("unregister_module".to_string(), entity)
 }

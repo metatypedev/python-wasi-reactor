@@ -1,86 +1,113 @@
 import { assertEquals } from "https://deno.land/std@0.190.0/testing/asserts.ts";
-import { getAssemblyInstance } from "./common.ts";
+import { 
+  processOutput, 
+} from "./common.ts";
 
+import {
+  register_virtual_machine,
+  unregister_virtual_machine,
 
-const global = { _ret: undefined } as Record<string, any>;
-function customCallback(id: number, ptr: number) {
-    global.ret = memory.decode(ptr);
-}
-
-const { instance, memory } = await getAssemblyInstance(customCallback);
-const { 
-    init_python, 
   register_lambda,                 
+  apply_lambda,
 
-  apply_lambda,    
   register_def,
-
   apply_def,
+
   register_module,
-} = instance.exports as Record<
-    string,
-    CallableFunction
-  >;
-init_python();
+} from "../bindings/bindings.ts"
+
+
+const vm_name = "test_vm";
+
+register_virtual_machine({
+  vm_name,
+  preopens: [
+      "/app:./deno/python_scripts:readonly"
+  ],
+  pylib_path: "./vendor/libpython/usr/local/lib",
+  wasi_mod_path: "./build/python-wasi-reactor.wasm",
+});
 
 Deno.test("wasm bindings", async (t) => {
-    await t.step("lambda function", () => {
-        const name = "hello", args = [1234];
-        const code = 'lambda x: f"hello{x}"';
-        // register
-        const op = memory.decode(
-            register_lambda(...memory.encode(name, code))
-        );
-        if (op.error) {
-            throw Error("python error "+ op.error);
-        }
-        // call
-        const _ = memory.decode(
-            apply_lambda(...memory.encode(0, name, JSON.stringify(args)))
-        );
-        
-        assertEquals({data: ['"hello1234"']}, global.ret)
-    });
+  await t.step("lambda function", () => {
+    processOutput(register_lambda({
+      vm: vm_name, 
+      name: "hello", 
+      code: 'lambda x: f"hello{x}"'
+    }));
 
-    await t.step("def function", () => {
-        const name = "hello", args = [1234];
-        const code = 'def hello(x):\n\treturn f"hello{x}"';
-        // register
-        const op = memory.decode(
-            register_def(...memory.encode(name, code))
-        );
-        if (op.error) {
-            throw Error("python error "+ op.error);
-        }
-        // call
-        const _ = memory.decode(
-            apply_def(...memory.encode(0, name, JSON.stringify(args)))
-        );
+    const ret = processOutput(apply_lambda({
+      vm: vm_name, 
+      id: 0, 
+      name: "hello", 
+      args: JSON.stringify([1234])
+    }))
 
-        assertEquals({data: ['"hello1234"']}, global.ret);
-    });
+    assertEquals(ret, '"hello1234"');
+  });
 
-    await t.step("module", () => {
-        const mod = "module";
-        const calls = ["A", "B"], args = <string[]>[];
-        const code = [
-            'def A():\n\treturn "A"', 
-            'def B():\n\treturn "B"'
-        ].join("\n\n");
-        // register
-        const op = memory.decode(
-            register_module(...memory.encode(mod, code))
-        );
-        if (op.error) {
-            throw Error("python error "+ op.error);
-        }
-        // call
-        for (const name of calls) {
-            const callee = `${mod}.${name}`;
-            const _ = memory.decode(
-                apply_def(...memory.encode(0, callee, JSON.stringify(args)))
-            );
-            assertEquals({data: [JSON.stringify(name)]}, global.ret);
-        }
-    });
+  await t.step("def function", () => {
+    processOutput(register_def({
+      vm: vm_name,
+      name: "add",
+      code: 'def add(x, y, z):\n\treturn x + y + z',
+    }));
+    
+    const ret = processOutput(apply_def({
+      vm: vm_name,
+      id: 0,
+      name: "add",
+      args: JSON.stringify([1, 2, 3])
+    }))
+
+    assertEquals(ret, "6");
+  });
+
+  await t.step("module", () => {
+    // mod_a
+    processOutput(register_module({
+      vm: vm_name,
+      name: "mod_a",
+      code: 'say_hello_a = lambda x: f"Hello {x} from A"',
+    }));
+
+    // mod_b
+    processOutput(register_module({
+      vm: vm_name,
+      name: "mod_b",
+      code: `
+def say_hello_b(x):
+  return f"Hello {x} from B"
+      `,
+    }));
+
+    // mod_main
+    processOutput(register_module({
+      vm: vm_name,
+      name: "mod_main",
+      code: `
+from mod_a import say_hello_a  # dynamic
+from mod_b import say_hello_b  # dynamic
+from defun import concat_two  # preopens
+
+def go():
+  return concat_two(
+    say_hello_a("Jake") + "\n",
+    say_hello_b("John")
+  )
+`,
+    }));
+
+    const ret = processOutput(apply_def({
+      vm: vm_name,
+      id: 0,
+      name: "mod_main.go",
+      args: JSON.stringify([])
+    }))
+
+    assertEquals(
+      ret,
+      '"Hello Jake from A\\nHello John from B"',
+    );
+  });
 });
