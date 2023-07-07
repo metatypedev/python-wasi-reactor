@@ -28,6 +28,7 @@ fn main() {
 
     //libs_config.add_lib_path("vendor/wasi-vfs/lib".to_string());
     //libs_config.add("wasi_vfs");
-
+    
+    #[cfg(feature = "wasm")]
     libs_config.emit_link_flags();
 }

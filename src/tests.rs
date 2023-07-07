@@ -6,8 +6,8 @@ use pyo3::prelude::*;
 use crate::core::*;
 use crate::core::rustpy::*;
 
-fn read_file(module: &str) -> Result<String, io::Error> {
-    fs::read_to_string(format!("./src/python/test/{}.py", module))
+fn read_script_file(module: &str) -> Result<String, io::Error> {
+    fs::read_to_string(format!("./deno/python_scripts/{}.py", module))
 }
 
 struct PyModuleCall {
@@ -23,6 +23,8 @@ struct PyModuleSample {
 
 
 pub fn init() {
+    // Note: 
+    // python version in cargo.toml must correspond to host machine python version
     std::env::set_var("PYTHONPATH", "./deno/python_scripts");
     std::env::set_var("PYTHONDONTWRITEBYTECODE", "1");
     pyo3::append_to_inittab!(reactor);
@@ -60,9 +62,9 @@ fn lambda_function() {
 fn def_function() {
     init();
     let module = "defun";
-    let callee = "concat";
-    let args = "[1, 2, \"three\"]";
-    match read_file(&module) {
+    let callee = "concat_two";
+    let args = "[1, \"two\"]";
+    match read_script_file(&module) {
         Ok(code) => {
             let reg = defun::register(callee.to_string(), code);
             assert!(reg.is_ok());
@@ -70,14 +72,14 @@ fn def_function() {
 
             let app = defun::apply(callee.to_string(), args.to_string());
             assert!(app.is_ok());
-            assert_eq!(app.unwrap(), "\"Simple concat: 12three!\"");
+            assert_eq!(app.unwrap(), "\"1two\"");
 
             let unreg = defun::unregister(callee.to_string());
             assert!(unreg.is_ok());
             assert_eq!(unreg.unwrap(), callee);
         },
         Err(e) => {
-            panic!("{:?}", e);
+            panic!("here {:?}", e);
         }
     }
 }
@@ -115,7 +117,7 @@ fn module_import() {
 
     // register
     for md in &samples {
-        match read_file(&md.name) {
+        match read_script_file(&md.name) {
             Ok(code) => {
                 let reg = module::register(md.name.clone(), code);
                 assert!(reg.is_ok());
