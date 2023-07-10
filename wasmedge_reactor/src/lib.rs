@@ -1,4 +1,5 @@
 mod wasi_vm;
+mod wasmedge_sdk_bindgen;
 
 use std::path::PathBuf;
 

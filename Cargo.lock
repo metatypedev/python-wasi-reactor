@@ -1494,16 +1494,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmedge-sdk-bindgen"
-version = "0.4.0"
-dependencies = [
- "num-derive",
- "num-traits",
- "wasmedge-sdk",
- "wasmedge-types",
-]
-
-[[package]]
 name = "wasmedge-sys"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1539,11 +1529,13 @@ dependencies = [
  "anyhow",
  "dashmap",
  "deno_bindgen",
+ "num-derive",
+ "num-traits",
  "once_cell",
  "serde",
  "wasmedge-sdk",
- "wasmedge-sdk-bindgen",
  "wasmedge-sys",
+ "wasmedge-types",
 ]
 
 [[package]]
