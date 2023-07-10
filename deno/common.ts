@@ -1,15 +1,17 @@
 import { WasiReactorOut } from "../bindings/bindings.ts";
 
+type Tag = "ok" | "err";
+
 interface PythonOutput {
   value: string, // json string
-  error: boolean
+  tag: Tag
 }
 
 export function processOutput(out: WasiReactorOut): string {
   if ("Ok" in out) {
     // vm output is ok
     const py: PythonOutput = JSON.parse(out.Ok.res);
-    if (py.error) {
+    if (py.tag == "err") {
       // python error
       throw Error(py.value);
     }

@@ -3,9 +3,17 @@ use pyo3::types::PyTuple;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
+pub enum Tag {
+    #[serde(rename = "ok")]
+    Ok,
+    #[serde(rename = "err")]
+    Err
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct RetValue {
     pub value: String,
-    pub error: bool,
+    pub tag: Tag,
 }
 
 pub fn collect_args_from_json(args_str: &str) -> Result<Vec<serde_json::Value>, String> {

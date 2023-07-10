@@ -1,6 +1,7 @@
 use wasmedge_bindgen_macro::wasmedge_bindgen;
 use crate::memory::host_result;
 use crate::core::*;
+use crate::core::common::*;
 
 pub mod host {
     #[link(wasm_import_module = "host")]
@@ -18,7 +19,7 @@ pub fn return_and_host_output(id: Option<i32>, out: Result<String, String>) -> S
                     host::callback(id, ptr);
                 };
             }
-            common::RetValue { value: res, error: false }
+            RetValue { value: res, tag: Tag::Ok }
         }
         Err(e) => {
             if let Some(id) = id {
@@ -27,7 +28,7 @@ pub fn return_and_host_output(id: Option<i32>, out: Result<String, String>) -> S
                     host::callback(id, ptr);
                 };
             }
-            common::RetValue { value: e, error: true }
+            RetValue { value: e, tag: Tag::Err  }
         }
     };
     serde_json::to_string(&ret).unwrap()
