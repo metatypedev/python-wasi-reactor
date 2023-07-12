@@ -5,7 +5,6 @@ import {
 
 import {
   register_virtual_machine,
-  unregister_virtual_machine,
 
   register_lambda,                 
   apply_lambda,
