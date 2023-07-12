@@ -1,9 +1,27 @@
-reactor:
+reactor_guest:
   watch: "src/**/*"
   command: "./dev/build.sh"
 
-deno:
-  watch: "deno/**/*.ts"
-  command: "deno run -A --unstable --v8-flags=--stack_size=2000 deno/main.ts"
+wasmedge_host:
+  watch: "wasmedge/**/*.rs"
+  command: "cargo run -p wasmedge_reactor"
   depends_on:
-    - reactor
+    - reactor_guest
+
+bindgen:
+  command: |
+    rm -rfv $(deno info --json | jq -r .denoDir)/plug/file wasmedge_reactor/bindings.json
+    deno_bindgen -- -p wasmedge_reactor
+  depends_on:
+    - wasmedge_host
+
+
+example:
+  command: "deno run -A --unstable deno/main.ts"
+  depends_on:
+    - bindgen
+
+example_parallel:
+  command: "deno run -A --unstable deno/parallel.ts"
+  depends_on:
+    - bindgen

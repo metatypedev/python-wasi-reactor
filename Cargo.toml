@@ -9,12 +9,19 @@ opt-level = "z"
 lto = true
 
 [dependencies]
-pyo3 = { version = "0.18.1", features = ["abi3-py311"] }
-pythonize = "0.18.0"
-serde_json = "1.0.94"
+pythonize = "0.19.0"
+serde = {version = "1.0.164", features = ["derive"] }
+serde_json = "1.0.97"
 wasmedge-bindgen-macro = "0.4.1"
+pyo3 = { version = "0.19.0", features = ["abi3-py311"] }
 
 [workspace]
 members = [
-    "wasmedge"
+    "wasmedge_reactor"
 ]
+
+[features]
+wasm = []
+
+[build-dependencies]
+wlr-assets = { git = "https://github.com/vmware-labs/webassembly-language-runtimes.git" }
