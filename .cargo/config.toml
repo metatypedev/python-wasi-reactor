@@ -1,14 +1,7 @@
 
 [target.wasm32-wasi]
-linker = "vendor/wasi-sdk/bin/clang"
 rustflags = [
     "-Z", "wasi-exec-model=reactor", 
-    "-L", "native=vendor/libpython/lib/wasm32-wasi",
-    "-L", "native=vendor/wasi-vfs/lib",
-    "-l", "wasi_vfs",
-    "-l", "wasi-emulated-getpid",
-    "-l", "wasi-emulated-signal", 
-    "-l", "wasi-emulated-process-clocks"
 ]
 
 [env]

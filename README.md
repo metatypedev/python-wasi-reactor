@@ -24,18 +24,21 @@ instance remains alive and and reacts to events from the host
 
 The runtime exports the following WASM exports:
 
-- init(): intialize Python and load plugin library
-- register(name: String, code: String): register Python lambda code with a name
-  (single argument)
-- unregister(name: String): unregister given lambda
-- apply(id: i32, name: String, args: String): run the given lambda with a run id
+- `init()`: intialize Python and load plugin library
+- `register_lambda(name: String, code: String)`: register Python lambda code with a name
+- `unregister_lambda(name: String)`: unregister given lambda
+- `apply_lambda(id: i32, name: String, args: String)`: run the given lambda with a run id
   number and its argument (JSON decoded before being passed to the lambda)
-- allocate: Wasmedge-bindgen memory allocation
-- deallocate: Wasmedge-bindgen memory deallocation
+- `register_def(name: String, code: String)`: register Python function with a name
+- `unregister_def(name: String)`: unregister given function
+- `apply_def(id: i32, name: String, args: String)`: run the given function with a run id
+  number and its argument (JSON decoded before being passed to the function)
+- `register_module(name: String, code: String)`: register Python code as a module with a name
+- `unregister_module(name: String)`: unregister given module
 
 It will also require the following imports:
 
-- callback(id: i32, value: i32): async return of apply with id and pointer to
+- `callback(id: i32, value: i32)`: async return of apply with id and pointer to
   result
 
 This is **experimental** and might not work as expected. Please report any
@@ -80,9 +83,23 @@ cargo run -p wasmedge
 Install [Whiz](https://github.com/zifeo/whiz) or manually run.
 
 ```bash
+# build wasi binary (guest)
 ./dev/install.sh
 ./dev/build.sh
-
 # enable optimization and compression
 ./build.sh --release
+
+
+# wasmedge (host)
+cargo run -p wasmedge
+```
+
+Install Deno bindgen
+```
+deno install -Afrq -n deno_bindgen https://deno.land/x/deno_bindgen/cli.ts
+```
+
+Testing
+```
+deno test -A --unstable deno/test.ts
 ```
