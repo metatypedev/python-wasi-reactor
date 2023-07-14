@@ -3,7 +3,10 @@ reactor_guest:
   command: "./dev/build.sh"
 
 wasmedge_host:
-  watch: "wasmedge/**/*.rs"
+  watch: "wasmedge_reactor/**/*.rs"
+  env:
+    DYLD_LIBRARY_PATH: "$HOME/.wasmedge/lib:$DYLD_LIBRARY_PATH" # macOS
+    LD_LIBRARY_PATH: "$HOME/.wasmedge/lib:$LD_LIBRARY_PATH" # linux
   command: "cargo run -p wasmedge_reactor"
   depends_on:
     - reactor_guest
@@ -14,7 +17,6 @@ bindgen:
     deno_bindgen -- -p wasmedge_reactor
   depends_on:
     - wasmedge_host
-
 
 example:
   command: "deno run -A --unstable deno/main.ts"
