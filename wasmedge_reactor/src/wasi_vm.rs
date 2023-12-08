@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use wasmedge_sdk::{
     config::{CommonConfigOptions, ConfigBuilder, HostRegistrationConfigOptions},
     error::HostFuncError,
-    host_function, params, Caller, ImportObjectBuilder, Module, VmBuilder, WasmValue, Vm,
+    host_function, params, Caller, ImportObjectBuilder, Module, VmBuilder, WasmValue, Vm, NeverType,
 };
 
 #[host_function]
@@ -30,15 +30,17 @@ pub fn init_reactor_vm(
 
     // create an import module
     let imports = ImportObjectBuilder::new()
-        .with_func::<(i32, i32), ()>("callback", callback)?
-        .build("host")?;
+        .with_func::<(i32, i32), (), NeverType>("callback", callback, None)?
+        .build::<NeverType>("host", None)?;
 
     // [!] module order matters
     let mut vm = VmBuilder::new()
         .with_config(config)
-        .build()?
-        .register_import_module(imports)?
-        .register_module(None, module)?;
+        .build()?;
+
+    vm.register_import_module(&imports)?;
+
+    let mut vm = vm.register_module(None, module)?;
 
     let wasi_module = vm.wasi_module_mut().unwrap();
     
