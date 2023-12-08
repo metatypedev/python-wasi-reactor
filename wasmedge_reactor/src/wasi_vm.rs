@@ -1,16 +1,28 @@
 
 use std::path::PathBuf;
+use anyhow::bail;
 use wasmedge_sdk::{
     config::{CommonConfigOptions, ConfigBuilder, HostRegistrationConfigOptions},
     error::HostFuncError,
-    host_function, params, Caller, ImportObjectBuilder, Module, VmBuilder, WasmValue, Vm, NeverType,
+    host_function, params, Caller, ImportObjectBuilder, Module, VmBuilder, WasmValue, Vm, NeverType, ImportObject,
 };
+use once_cell::sync::OnceCell;
 
 #[host_function]
 pub fn callback(_caller: Caller, _args: Vec<WasmValue>) -> Result<Vec<WasmValue>, HostFuncError> {
     // println!("[host] callback");
     Ok(vec![])
 }
+
+static IMPORTS: OnceCell<ImportObject<NeverType>> = OnceCell::new();
+
+pub fn get_or_init_imports() -> anyhow::Result<&'static ImportObject<NeverType>> {
+    let import = ImportObjectBuilder::new()
+        .with_func::<(i32, i32), (), NeverType>("callback", callback, None)?
+        .build::<NeverType>("host", None)?;
+    Ok(IMPORTS.get_or_init(|| import))
+}
+
 
 pub fn init_reactor_vm(
     inp_preopens: Vec<String>,
@@ -25,33 +37,41 @@ pub fn init_reactor_vm(
         .build()?;
     // end config
 
-    // load wasm module
-    let module = Module::from_file(None, wasi_mod_path)?;
-
-    // create an import module
-    let imports = ImportObjectBuilder::new()
-        .with_func::<(i32, i32), (), NeverType>("callback", callback, None)?
-        .build::<NeverType>("host", None)?;
-
     // [!] module order matters
     let mut vm = VmBuilder::new()
         .with_config(config)
         .build()?;
 
-    vm.register_import_module(&imports)?;
+    // FIXME:
+    // wasmedge bug? locally scoped import ref that involves host function
+    // makes some bindings call segfault with exit code 11
+    // if we don't use a global ref.
 
+    // Note: in version 0.8.1, register_import_module
+    // only required my_import vs &my_import (current) 
+    vm.register_import_module(get_or_init_imports()?)?;
+
+    // load wasm module
+    let module = Module::from_file(None, wasi_mod_path)?;
     let mut vm = vm.register_module(None, module)?;
 
     let wasi_module = vm.wasi_module_mut().unwrap();
-    
+
+    // prepare preopens
     let mut preopens = vec![
         format!("/usr/local/lib:{}:readonly", pythonlib_path.display()),
     ];
     preopens.extend(inp_preopens);
-    let preopens = preopens.iter().map(|s| &s[..]).collect();
+    let preopens = preopens.iter().map(|s| s.as_ref()).collect();
     wasi_module.initialize(None, None, Some(preopens));
 
-    println!("wasi_module: {:?}", wasi_module.exit_code());
+    let exit_code = wasi_module.exit_code();
+    if exit_code != 0 {
+        bail!(
+            "wasi_module.initialize failed and returned exit code: {:?}",
+            exit_code
+        )
+    }
 
     // if wasi-vfs is not used, initialize the reactor as not done automatically
     let _init = vm.run_func(None, "_initialize", params!())?;
