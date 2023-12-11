@@ -1,10 +1,8 @@
 mod wasi_vm;
-mod wasmedge_sdk_bindgen;
 
 use std::path::PathBuf;
 
-use wasmedge_sdk::params;
-use wasmedge_sdk_bindgen::{Bindgen, Param};
+use wasmedge_sdk::{params, dock::{VmDock, Param}};
 
 fn main() -> anyhow::Result<()> {
     let preopens = vec!["/app:./src/python:readonly".to_owned()];
@@ -15,10 +13,10 @@ fn main() -> anyhow::Result<()> {
     println!("\n-----------------");
     vm.run_func(None, "init_python", params!())?;
 
-    let mut bg = Bindgen::new(vm);
+    let dock: VmDock = VmDock::new(vm);
 
     // basic test
-    bg.run_wasm("identity", vec![Param::String("hello identity from guest")])
+    dock.run_func("identity", vec![Param::String("hello identity from guest")])
         .and_then(|rv| {
             let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
             println!("Run bindgen -- identity {:?}", ret);
@@ -29,7 +27,7 @@ fn main() -> anyhow::Result<()> {
         Param::String("say_hello"),
         Param::String("lambda name: f\"Hello {name}\"")
     ];
-    bg.run_wasm("register_lambda", args)
+    dock.run_func("register_lambda", args)
         .and_then(|rv| {
             let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
             println!("Run bindgen -- register_lambda {:?}", ret);
@@ -41,7 +39,7 @@ fn main() -> anyhow::Result<()> {
         Param::String("say_hello"),
         Param::String("[\"Jake\"]")
     ];
-    bg.run_wasm("apply_lambda", args)
+    dock.run_func("apply_lambda", args)
         .and_then(|rv| {
             let ret = rv.unwrap().pop().unwrap().downcast::<String>().unwrap();
             println!("Run bindgen -- apply_lambda {}", ret);

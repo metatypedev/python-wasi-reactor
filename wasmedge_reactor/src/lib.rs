@@ -1,12 +1,10 @@
 mod wasi_vm;
-mod wasmedge_sdk_bindgen;
 
 use std::path::PathBuf;
 
 use dashmap::{DashMap, mapref::one::Ref};
 use deno_bindgen::deno_bindgen;
-use wasmedge_sdk::{Vm, params};
-use wasmedge_sdk_bindgen::{Bindgen, Param};
+use wasmedge_sdk::{Vm, params, dock::{VmDock, Param}};
 use once_cell::sync::Lazy;
 
 static VIRTUAL_MACHINES: Lazy<DashMap<String, Vm>> = Lazy::new(DashMap::new);
@@ -101,8 +99,8 @@ fn run_wasi_func(
     fn_name: String,
     args: Vec<Param>
 ) -> WasiReactorOut {
-    let mut bg = Bindgen::new(vm.to_owned());
-    match bg.run_wasm(fn_name, args) {
+    let dock = VmDock::new(vm.to_owned());
+    match dock.run_func(fn_name, args) {
         Ok(ret) => {
             let ret = ret.unwrap().pop().unwrap().downcast::<String>().unwrap();
             WasiReactorOut::Ok { res: ret.as_ref().to_owned() }
